@@ -1,0 +1,305 @@
+/* FullCalendar Theme Anpassung */
+.fc {
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.fc-button-primary {
+  background-color: var(--cui-primary, #321fdb) !important;
+  border-color: var(--cui-primary, #321fdb) !important;
+}
+
+.fc-button-primary:not(:disabled).fc-button-active,
+.fc-button-primary:not(:disabled):active {
+  background-color: var(--cui-primary-dark, #1e0ea6) !important;
+  border-color: var(--cui-primary-dark, #1e0ea6) !important;
+}
+
+.fc-button-primary:hover {
+  filter: brightness(0.9);
+}
+
+.fc-today-button {
+  opacity: 1 !important;
+}
+
+.fc-daygrid-day.fc-day-today {
+  background-color: rgba(50, 31, 219, 0.06) !important;
+}
+
+.fc-col-header-cell {
+  background-color: var(--cui-tertiary-bg, #f8f9fa);
+  font-weight: 600;
+}
+
+/* Event Hover */
+.fc .fc-event {
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
+}
+
+.fc .fc-event:hover {
+  filter: brightness(0.96);
+
+  transform: translateY(-1px);
+
+  cursor: pointer;
+}
+
+
+
+/* Tooltip */
+.calendar-tooltip {
+  position: fixed;
+  z-index: 9999;
+  min-width: 240px;
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--cui-body-bg);
+  color: var(--cui-body-color);
+  border: 1px solid var(--cui-border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+  animation: calendarTooltipFade 0.15s ease;
+  backdrop-filter: blur(10px);
+}
+
+.calendar-tooltip-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.calendar-tooltip-row {
+  font-size: 0.82rem;
+  margin-bottom: 4px;
+}
+
+.calendar-tooltip-description {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--cui-border-color);
+  font-size: 0.82rem;
+  opacity: 0.9;
+  white-space: pre-wrap;
+}
+
+@keyframes calendarTooltipFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================================================================
+   Layout: calendar-page
+   flex-direction: row  →  sidebar links, kalender rechts
+   height: 100%         →  füllt .app-content (DefaultLayout) komplett aus,
+                           ohne den AppHeader zu berühren
+============================================================================= */
+.calendar-page {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* =============================================================================
+   Sidebar
+   - kein position:fixed / absolute – reines Flex-Kind
+   - transition auf width damit das Ein-/Ausklappen smooth ist
+============================================================================= */
+.room-sidebar {
+  width: 210px;
+  min-width: 210px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--cui-border-color);
+  background-color: var(--cui-body-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.25s ease, min-width 0.25s ease, opacity 0.2s ease;
+}
+
+.room-sidebar--hidden {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  border-right: none;
+}
+
+/* Header */
+.room-sidebar__header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--cui-border-color);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.room-sidebar__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cui-secondary-color, #6c757d);
+}
+
+/* Liste */
+.room-sidebar__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.room-sidebar__item {
+  padding: 0.1rem 0.4rem;
+  margin: 0 0.4rem;
+  border-radius: 4px;
+}
+
+.room-sidebar__item:hover {
+  background-color: var(--cui-tertiary-bg);
+}
+
+.room-sidebar__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* Farbige Checkbox – funktionsfähig, Filterlogik folgt */
+.room-sidebar__checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  border: 2px solid var(--room-color, #321fdb);
+  background-color: transparent;
+  flex-shrink: 0;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.room-sidebar__checkbox:checked {
+  background-color: var(--room-color, #321fdb);
+}
+
+/* Häkchen */
+.room-sidebar__checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+.room-sidebar__checkbox:focus-visible {
+  outline: 2px solid var(--room-color, #321fdb);
+  outline-offset: 2px;
+}
+
+.room-sidebar__label {
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.15s ease;
+}
+
+.room-sidebar__label--unchecked {
+  opacity: 0.4;
+}
+
+.room-sidebar__empty {
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--cui-secondary-color, #6c757d);
+}
+
+/* =============================================================================
+   Kalender-Wrapper
+============================================================================= */
+.calendar-wrapper {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.75rem;
+  overflow: hidden;
+}
+
+/* =============================================================================
+   Mobile Layout (< 768px)
+============================================================================= */
+@media (max-width: 767px) {
+  .calendar-page {
+    flex-direction: column;
+  }
+
+  .calendar-wrapper {
+    order: 1;
+  }
+
+.room-sidebar {
+    order: 2;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 20dvh;
+    max-height: 20dvh;
+    border-right: none;
+    border-top: 1px solid var(--cui-border-color);
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .room-sidebar__list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap; 
+    gap: 0.25rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .room-sidebar__item {
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .room-sidebar--hidden {
+    width: 100% !important;
+    min-width: 0 !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .fc .fc-toggleSidebar-button {
+    display: none;
+  }
+
+  .fc-list-event-title a {
+    font-size: 0.85rem;
+  }
+}

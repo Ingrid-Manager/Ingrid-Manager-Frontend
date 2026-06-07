@@ -1,0 +1,66 @@
+{
+  "name": "@ingrid-manager/dev_ingridmanagerfrontend",
+  "version": "0.0.1",
+  "description": "Frontend for the Ingrid Manager Backend",
+  "bugs": {
+    "url": "https://github.com/Ingrid-Manager/DEV_IngridManagerFrontend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Ingrid-Manager/DEV_IngridManagerFrontend.git"
+  },
+  "license": "MIT",
+  "author": "IngridManager Team (https://github.com/Ingrid-Manager)",
+  "scripts": {
+    "dev": "vite --force",
+    "build": "vue-tsc --noEmit && vite build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "type-check": "vue-tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@coreui/chartjs": "^4.1.0",
+    "@coreui/coreui": "^5.4.1",
+    "@coreui/icons": "^3.0.1",
+    "@coreui/icons-vue": "2.2.0",
+    "@coreui/utils": "^2.0.2",
+    "@coreui/vue": "^5.5.0",
+    "@coreui/vue-chartjs": "^3.0.0",
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/list": "^6.1.20",
+    "@fullcalendar/rrule": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
+    "@fullcalendar/vue3": "^6.1.20",
+    "@popperjs/core": "^2.11.8",
+    "axios": "^1.13.5",
+    "chart.js": "^4.5.0",
+    "dotenv": "^17.4.2",
+    "pinia": "^3.0.3",
+    "simplebar-vue": "^2.4.2",
+    "vue": "^3.5.18",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-vue": "^10.4.0",
+    "globals": "^16.3.0",
+    "postcss": "^8.5.6",
+    "prettier": "^3.8.3",
+    "sass": "^1.90.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.0",
+    "vue-eslint-parser": "^10.4.0",
+    "vue-tsc": "^3.2.6"
+  }
+}
