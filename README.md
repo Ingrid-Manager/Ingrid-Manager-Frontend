@@ -212,6 +212,16 @@ npm run type-check
 
 ---
 
+
+## Autor
+**Pascal045**  
+**Jonathan Hartmann**  
+🌐 [ingrid-manager.de](https://ingrid-manager.de)  
+🐙 [@Pascal045](https://github.com/Pascal045)  
+🐙 [@JonathanHartmann](https://github.com/JonathanHartmann)  
+
+
+
 ## Lizenz
 
 Dieses Projekt steht unter der **GNU Affero General Public License v3 (AGPL v3)**.
