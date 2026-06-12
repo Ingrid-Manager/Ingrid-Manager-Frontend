@@ -16,7 +16,7 @@ const form = ref({
   'register-email': '',
   'register-password': '',
   'register-password-confirm': '',
-  //honeypot 
+  //honeypot
   website: '',
 });
 
@@ -35,7 +35,7 @@ const submit = async () => {
 
   error.value = '';
 
-  const seconds = (Date.now() - loadedAt) / 1000
+  const seconds = (Date.now() - loadedAt) / 1000;
 
   if (seconds < 3) {
     error.value = 'Bitte waren Sie einen Moment';
@@ -68,9 +68,9 @@ const submit = async () => {
   try {
     await register({
       email: form.value['register-email'],
-      password:  form.value['register-password'],
+      password:form.value['register-password'],
       firstName: form.value['register-firstname'],
-      lastName:  form.value['register-lastname']
+      lastName:form.value['register-lastname'],
     });
 
     success.value = true;
@@ -89,160 +89,161 @@ const submit = async () => {
     <CContainer>
       <CRow class="justify-content-center">
         <CCol :md="8">
-          <CCardGroup>
-            <CCard class="p-4">
-              <CCardBody>
-                <!-- Erfolgsmeldung nach Registrierung -->
-                <div v-if="success">
-                  <h1>Registrierung erfolgreich</h1>
-                  <p class="text-body-secondary">
-                    Ihr Konto wurde erstellt. Sie müssen von Ihrem Administrator
-                    freigeschaltet werden, bevor Sie sich anmelden können.
+          <CRow class="g-0">
+            <CCol :xs="12" :md="7">
+              <CCard class="p-4">
+                <CCardBody>
+                  <!-- Erfolgsmeldung nach Registrierung -->
+                  <div v-if="success">
+                    <h1>Registrierung erfolgreich</h1>
+                    <p class="text-body-secondary">
+                      Ihr Konto wurde erstellt. Sie müssen von Ihrem Administrator
+                      freigeschaltet werden, bevor Sie sich anmelden können.
+                    </p>
+                    <CButton color="primary" class="mt-2" @click="router.push('/auth/login')">
+                      Zur Anmeldung
+                    </CButton>
+                  </div>
+
+                  <!-- Registrierungsformular -->
+                  <CForm v-else @submit.prevent="submit">
+                    <h1>Registrieren</h1>
+                    <p class="text-body-secondary">Erstellen Sie Ihr Konto.</p>
+
+                    <CAlert
+                      v-if="error"
+                      color="danger"
+                      class="mb-3"
+                      dismissible
+                    >
+                      {{ error }}
+                    </CAlert>
+                    <CAlert v-if="success" color="success" class="mb-3"> 
+                      Registrierung erfolgreich.
+                      Ein Administrator muss den Account freischalten.
+                    </CAlert>
+
+                    <!-- Vorname & Nachname -->
+                    <CRow class="mb-3">
+                      <CCol :sm="6" class="mb-3 mb-sm-0">
+                        <CInputGroup>
+                          <CInputGroupText>
+                            <CIcon icon="cil-user" />
+                          </CInputGroupText>
+                          <CFormInput
+                            id="register-firstname"
+                            v-model="form['register-firstname']"
+                            placeholder="Vorname"
+                            autocomplete="given-name"
+                            :invalid="!!error"
+                          />
+                        </CInputGroup>
+                      </CCol>
+                      <CCol :sm="6">
+                        <CInputGroup>
+                          <CInputGroupText>
+                            <CIcon icon="cil-user" />
+                          </CInputGroupText>
+                          <CFormInput
+                            id="register-lastname"
+                            v-model="form['register-lastname']"
+                            placeholder="Nachname"
+                            autocomplete="family-name"
+                            :invalid="!!error"
+                          />
+                        </CInputGroup>
+                      </CCol>
+                    </CRow>
+
+                    <!-- E-Mail -->
+                    <CInputGroup class="mb-3">
+                      <CInputGroupText>@</CInputGroupText>
+                      <CFormInput
+                        id="register-email"
+                        v-model="form['register-email']"
+                        type="email"
+                        placeholder="E-Mail Adresse"
+                        autocomplete="email"
+                        :invalid="!!error"
+                      />
+                    </CInputGroup>
+
+                    <!-- Passwort -->
+                    <CInputGroup class="mb-3">
+                      <CInputGroupText>
+                        <CIcon icon="cil-lock-locked" />
+                      </CInputGroupText>
+                      <CFormInput
+                        id="register-password"
+                        v-model="form['register-password']"
+                        type="password"
+                        placeholder="Passwort"
+                        autocomplete="new-password"
+                        :invalid="!!error"
+                      />
+                    </CInputGroup>
+
+                    <!-- Passwort bestätigen -->
+                    <CInputGroup class="mb-4">
+                      <CInputGroupText>
+                        <CIcon icon="cil-lock-locked" />
+                      </CInputGroupText>
+                      <CFormInput
+                        id="register-password-confirm"
+                        v-model="form['register-password-confirm']"
+                        type="password"
+                        placeholder="Passwort bestätigen"
+                        autocomplete="new-password"
+                        :invalid="!!error"
+                      />
+                    </CInputGroup>
+
+                    <CRow>
+                      <CCol :xs="6">
+                        <CButton
+                          color="primary"
+                          class="px-4"
+                          type="submit"
+                          :disabled="loading"
+                        >
+                          {{ loading ? 'Wird registriert…' : 'Registrieren' }}
+                        </CButton>
+                      </CCol>
+                      <CCol :xs="6" class="text-end">
+                        <CButton
+                          color="link"
+                          class="px-0"
+                          @click="router.push('/auth/login')"
+                        >
+                          Bereits registriert?
+                        </CButton>
+                      </CCol>
+                    </CRow>
+                  </CForm>
+                </CCardBody>
+              </CCard>
+            </CCol>
+
+            <CCol :xs="12" :md="5">
+              <CCard class="text-white bg-primary py-5 h-100">
+                <CCardBody class="text-center d-flex flex-column justify-content-center">
+                  <h2>Willkommen</h2>
+                  <p>
+                    Nach der Registrierung muss Ihr Konto von der Verwaltung
+                    freigeschaltet werden. Erst danach können Sie sich anmelden.
                   </p>
-                  <CButton color="primary" class="mt-2" @click="router.push('/auth/login')">
+                  <CButton
+                    color="light"
+                    variant="outline"
+                    class="mt-3"
+                    @click="router.push('/auth/login')"
+                  >
                     Zur Anmeldung
                   </CButton>
-                </div>
-
-                <!-- Registrierungsformular -->
-                <CForm v-else @submit.prevent="submit">
-                  <h1>Registrieren</h1>
-                  <p class="text-body-secondary">Erstellen Sie Ihr Konto.</p>
-
-                  <CAlert 
-                    v-if="error" 
-                    color="danger" 
-                    class="mb-3" 
-                    dismissible>
-                    {{ error }}
-                  </CAlert>
-                  <CAlert
-                    v-if="success"
-                    color="success"
-                    class="mb-3">
-                    Registrierung erfolgreich.
-                    Ein Administrator muss den Account freischalten.
-                  </CAlert>
-
-                  <!-- Vorname & Nachname -->
-                  <CRow class="mb-3">
-                    <CCol :sm="6" class="mb-3 mb-sm-0">
-                      <CInputGroup>
-                        <CInputGroupText>
-                          <CIcon icon="cil-user" />
-                        </CInputGroupText>
-                        <CFormInput
-                          id="register-firstname"
-                          v-model="form['register-firstname']"
-                          placeholder="Vorname"
-                          autocomplete="given-name"
-                          :invalid="!!error"
-                        />
-                      </CInputGroup>
-                    </CCol>
-                    <CCol :sm="6">
-                      <CInputGroup>
-                        <CInputGroupText>
-                          <CIcon icon="cil-user" />
-                        </CInputGroupText>
-                        <CFormInput
-                          id="register-lastname"
-                          v-model="form['register-lastname']"
-                          placeholder="Nachname"
-                          autocomplete="family-name"
-                          :invalid="!!error"
-                        />
-                      </CInputGroup>
-                    </CCol>
-                  </CRow>
-
-                  <!-- E-Mail -->
-                  <CInputGroup class="mb-3">
-                    <CInputGroupText>@</CInputGroupText>
-                    <CFormInput
-                      id="register-email"
-                      v-model="form['register-email']"
-                      type="email"
-                      placeholder="E-Mail Adresse"
-                      autocomplete="email"
-                      :invalid="!!error"
-                    />
-                  </CInputGroup>
-
-                  <!-- Passwort -->
-                  <CInputGroup class="mb-3">
-                    <CInputGroupText>
-                      <CIcon icon="cil-lock-locked" />
-                    </CInputGroupText>
-                    <CFormInput
-                      id="register-password"
-                      v-model="form['register-password']"
-                      type="password"
-                      placeholder="Passwort"
-                      autocomplete="new-password"
-                      :invalid="!!error"
-                    />
-                  </CInputGroup>
-
-                  <!-- Passwort bestätigen -->
-                  <CInputGroup class="mb-4">
-                    <CInputGroupText>
-                      <CIcon icon="cil-lock-locked" />
-                    </CInputGroupText>
-                    <CFormInput
-                      id="register-password-confirm"
-                      v-model="form['register-password-confirm']"
-                      type="password"
-                      placeholder="Passwort bestätigen"
-                      autocomplete="new-password"
-                      :invalid="!!error"
-                    />
-                  </CInputGroup>
-
-                  <CRow>
-                    <CCol :xs="6">
-                      <CButton
-                        color="primary"
-                        class="px-4"
-                        type="submit"
-                        :disabled="loading"
-                      >
-                        {{ loading ? 'Wird registriert…' : 'Registrieren' }}
-                      </CButton>
-                    </CCol>
-                    <CCol :xs="6" class="text-end">
-                      <CButton
-                        color="link"
-                        class="px-0"
-                        @click="router.push('/auth/login')"
-                      >
-                        Bereits registriert?
-                      </CButton>
-                    </CCol>
-                  </CRow>
-                </CForm>
-              </CCardBody>
-            </CCard>
-
-            <!-- Infobereich rechts -->
-            <CCard class="text-white bg-primary py-5" style="width: 44%">
-              <CCardBody class="text-center d-flex flex-column justify-content-center">
-                <h2>Willkommen</h2>
-                <p>
-                  Nach der Registrierung muss Ihr Konto von der Verwaltung
-                  freigeschaltet werden. Erst danach können Sie sich anmelden.
-                </p>
-                <CButton
-                  color="light"
-                  variant="outline"
-                  class="mt-3"
-                  @click="router.push('/auth/login')"
-                >
-                  Zur Anmeldung
-                </CButton>
-              </CCardBody>
-            </CCard>
-          </CCardGroup>
+                </CCardBody>
+              </CCard>
+            </CCol>
+          </CRow>
         </CCol>
       </CRow>
     </CContainer>
