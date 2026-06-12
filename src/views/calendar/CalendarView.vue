@@ -14,7 +14,6 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import deLocale from '@fullcalendar/core/locales/de';
 import listPlugin from '@fullcalendar/list'
-import rrulePlugin from '@fullcalendar/rrule';
 
 import EventModal from '@/components/modals/EventModal.vue';
 import { fetchEvents } from '@/api/getCalendar';
@@ -26,7 +25,6 @@ import { getRoomNames } from '@/api/getRoomNames';
 import { updateCalendarEvent } from '@/api/updateCalendarEvent';
 import type { RoomNames } from '@/helper/interfaces/room/RoomNames';
 import { deleteCalendarEvent } from '@/api/deleteEvent';
-import { parseRRule } from '@/helper/calendar/parseRRule';
 
 
 // ─── Breakpoint ───────────────────────────────────────────────────────────────
@@ -145,7 +143,7 @@ const canEditEvent = computed(() => {
 });
 
 const calendarOptions = computed<CalendarOptions>(() => ({
-  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, rrulePlugin],
+  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
   locale: deLocale,
 
   // Standard: Monatsansicht
@@ -247,24 +245,9 @@ const calendarOptions = computed<CalendarOptions>(() => ({
             title: e.title,
             allDay: e.allDay,
             color: normalizedColor,
-
-            ...(e.rrule
-              ? {
-                  rrule: {
-                    dtstart: e.start,
-                    ...parseRRule(e.rrule),
-                  },
-
-                  duration: {
-                    milliseconds:
-                      new Date(e.end!).getTime() -
-                      new Date(e.start!).getTime(),
-                  },
-                }
-              : {
                   start: e.start,
                   end: e.end,
-                }),
+
 
             display: e.isBackground ? 'background' : 'block',
 
