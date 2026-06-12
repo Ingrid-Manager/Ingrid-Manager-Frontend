@@ -3,7 +3,6 @@ import { watch, ref, onMounted, computed } from 'vue';
 
 import type { CalendarEvent } from '@/helper/interfaces/calendar/CalendarEvent';
 import type { RoomNames } from '@/helper/interfaces/room/RoomNames';
-import { buildRRule } from '@/helper/calendar/buildRRule';
 
 import { useEventForm } from '@/composables/useEventForm';
 import { getRoomNames } from '@/api/getRoomNames';
@@ -160,15 +159,6 @@ function handleSubmit() {
     const start = `${date}T${form.value.startTime}:00`;
     const end = `${endDateStr}T${form.value.endTime}:00`;
 
-    // Kein rrule bei customSeries – jeder Termin ist einzeln
-    let rrule: string | undefined;
-    if (form.value.isSeries && form.value.endSeriesDate) {
-      rrule = buildRRule(
-        form.value.repeatType,
-        form.value.endSeriesDate,
-      );
-    }
-
     const payload = {
       id: props.event?.id ? Number(props.event.id) : 0,
       title: form.value.title.trim(),
@@ -178,7 +168,6 @@ function handleSubmit() {
       description: form.value.description.trim(),
       roomid: Number(form.value.room),
       categoryid: 1,
-      rrule,
     };
 
     emit('save', payload);

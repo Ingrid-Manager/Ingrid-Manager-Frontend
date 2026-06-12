@@ -11,5 +11,5 @@ export interface CalendarEvent {
   userId: number;
   userName: string;
   isBackground: boolean;
-  rrule: string;
+  rrule?: string;
 }
