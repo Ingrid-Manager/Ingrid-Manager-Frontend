@@ -230,7 +230,7 @@ function handleDelete() {
         <CRow class="mb-3">
           <CCol md="6">
             <CFormLabel>Raum</CFormLabel>
-            <CFormSelect v-model="form.room" required>
+            <CFormSelect v-model="form.room" required :disabled="!canEdit">
               <option value="">Bitte wählen</option>
               <option v-for="room in roomNames" :key="room.id" :value="String(room.id)">
                 {{ room.title }}
@@ -243,12 +243,12 @@ function handleDelete() {
         <CRow class="mb-3">
           <CCol md="6">
             <CFormLabel>Startzeit</CFormLabel>
-            <CFormInput v-model="form.startTime" type="time" required />
+            <CFormInput v-model="form.startTime" type="time" required :disabled="!canEdit"/>
           </CCol>
 
           <CCol md="6">
             <CFormLabel>Endzeit</CFormLabel>
-            <CFormInput v-model="form.endTime" type="time" required :invalid="validated && !!timeError" />
+            <CFormInput v-model="form.endTime" type="time" required :invalid="validated && !!timeError" :disabled="!canEdit"/>
             <CFormFeedback invalid>{{ timeError }}</CFormFeedback>
           </CCol>
         </CRow>
@@ -257,20 +257,20 @@ function handleDelete() {
         <CRow class="mb-3">
           <CCol md="6">
             <CFormLabel>Startdatum</CFormLabel>
-            <CFormInput v-model="form.startDate" type="date" required />
+            <CFormInput v-model="form.startDate" type="date" required :disabled="!canEdit"/>
           </CCol>
 
           <CCol md="6">
             <CFormLabel>Enddatum</CFormLabel>
             <CFormInput v-model="form.endDate" type="date" :min="form.startDate || undefined"
-              :invalid="validated && !!dateError" />
+              :invalid="validated && !!dateError" :disabled="!canEdit"/>
             <CFormFeedback invalid>{{ dateError }}</CFormFeedback>
           </CCol>
         </CRow>
         <!-- Serie -->
         <CRow class="mb-3">
           <CCol>
-            <CFormCheck v-model="form.isSeries" label="Termin ist Teil einer Serie" />
+            <CFormCheck v-model="form.isSeries" label="Termin ist Teil einer Serie" :disabled="!canEdit"/>
           </CCol>
         </CRow>
 
