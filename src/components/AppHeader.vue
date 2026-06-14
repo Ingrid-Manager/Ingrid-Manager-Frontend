@@ -159,9 +159,11 @@ onMounted(() => {
             >
               Profil
             </CDropdownHeader>
+            <!--
             <CDropdownItem>
               <CIcon icon="cil-settings" /> Einstellungen
             </CDropdownItem>
+          -->
             <CDropdownDivider />
             <CDropdownItem @click="handleLogout">
               <CIcon icon="cil-lock-locked" /> Abmelden
