@@ -16,6 +16,7 @@ import deLocale from '@fullcalendar/core/locales/de';
 import listPlugin from '@fullcalendar/list'
 
 import EventModal from '@/components/modals/EventModal.vue';
+import SeriesEventChoiceModal from '@/components/modals/SeriesEventChoiceModal.vue';
 import { fetchEvents } from '@/api/getCalendar';
 import { PrefillData } from '@/helper/interfaces/PrefillData';
 import { useAuthStore } from '@/stores/auth.store';
@@ -25,7 +26,10 @@ import { getRoomNames } from '@/api/getRoomNames';
 import { updateCalendarEvent } from '@/api/updateCalendarEvent';
 import type { RoomNames } from '@/helper/interfaces/room/RoomNames';
 import { deleteCalendarEvent } from '@/api/deleteEvent';
-
+import { getSeriesEvent } from '@/api/series/getSeriesEvent';
+import { splitSeriesEvent } from '@/api/series/splitSeriesEvent';
+import { deleteSeriesEvent } from '@/api/series/deleteSeriesEvent';
+import { createSeriesEvent } from '@/api/series/createSeriesEvent';
 
 // ─── Breakpoint ───────────────────────────────────────────────────────────────
 const windowWidth = ref(window.innerWidth)
@@ -65,6 +69,7 @@ const tooltip = ref<HTMLElement | null>(null);
 const selectedEvent = ref<CalendarEvent | null>(null);
 const isEditing = ref(false);
 const auth = useAuthStore();
+const showSeriesChoiceModal = ref(false);
 
 const calendarRef = ref();
 const showModal = ref(false);
@@ -76,6 +81,11 @@ const formData = ref<PrefillData>({
   roomId: 0,
 });
 
+const editMode = ref<
+  'event' |
+  'split'
+>('event');
+
 function openModal(prefill: PrefillData = {}) {
   formData.value = prefill;
   showModal.value = true;
@@ -86,14 +96,65 @@ function closeModal() {
   selectedEvent.value = null;
   isEditing.value = false;
   modalError.value = '';
+  editMode.value = 'event'
 }
 
 async function handleSave(payload: any) {
   try {
-    if (isEditing.value && selectedEvent.value?.id) {
-      await updateCalendarEvent(selectedEvent.value.id, payload);
+    if (isEditing.value) {
+
+      switch (editMode.value) {
+
+        case 'event':
+
+          await updateCalendarEvent(
+            selectedEvent.value!.id,
+            payload,
+          );
+          break;
+
+        case 'split':
+
+          await splitSeriesEvent(
+            selectedEvent.value!.seriesId!,
+            {
+              splitDate:
+                selectedEvent.value!.start
+                  .split('T')[0],
+
+              ...payload,
+            },
+          );
+          break;
+      }
+
     } else {
-      await createEvent(payload);
+
+      if (!isEditing.value && payload.isSeries) { 
+          const weekday = new Date(payload.start).getDay();
+          const seriespayload = {
+            title: payload.title,
+            description: payload.description,
+
+            roomid: payload.roomid,
+            categoryid: payload.categoryid,
+
+            startTime: payload.start.split('T')[1].substring(0, 5),
+
+            endTime: payload.end.split('T')[1].substring(0, 5),
+
+            seriesStart: payload.start,
+            seriesEnd: payload.endSeriesDate,
+
+            weekdays: [weekday],
+            frequency: payload.frequency,
+            runDuringSchoolHolidays: payload.runDuringSchoolHolidays
+          }
+          await createSeriesEvent(seriespayload);
+      } else {
+        await createEvent(payload);
+      }
+
     }
 
     closeModal();
@@ -110,13 +171,29 @@ async function handleSave(payload: any) {
   }
 }
 
-async function handleDelete(id: string) {
+async function handleDelete(
+  id: string,
+) {
   try {
-    await deleteCalendarEvent(Number(id));
-    const calendarApi = calendarRef.value?.getApi();
-    calendarApi?.refetchEvents();
+
+    if (editMode.value === 'split' && selectedEvent.value?.seriesId) {
+      await deleteSeriesEvent(selectedEvent.value.seriesId);
+    } else {
+      await deleteCalendarEvent(Number(id));
+    }
+
+    closeModal();
+
+    calendarRef.value
+      ?.getApi()
+      ?.refetchEvents();
+
   } catch (err) {
-    console.error('Fehler beim Löschen:', err);
+
+    console.error(
+      'Fehler beim Löschen:',
+      err,
+    );
   }
 }
 
@@ -142,6 +219,49 @@ const canEditEvent = computed(() => {
   return user.id === selectedEvent.value.userId;
 });
 
+function openSingleEvent() {
+
+  editMode.value = 'event';
+  showSeriesChoiceModal.value = false;
+
+  openModal({
+    startDate: selectedEvent.value?.start?.split('T')[0],
+    endDate: selectedEvent.value?.end?.split('T')[0],
+    title: selectedEvent.value?.title,
+    description: selectedEvent.value?.description,
+    roomId: selectedEvent.value?.roomId,
+    isSeries: false,
+  });
+
+  isEditing.value = true;
+}
+
+async function openSplitEvent() {
+  if (!selectedEvent.value?.seriesId) {
+    return;
+  }
+
+  editMode.value = 'split';
+  showSeriesChoiceModal.value = false;
+
+  const series = await getSeriesEvent(selectedEvent.value.seriesId);
+
+  openModal({
+    startDate: selectedEvent.value?.start?.split('T')[0],
+    endDate: selectedEvent.value?.end?.split('T')[0],
+    title: selectedEvent.value?.title,
+    description: selectedEvent.value?.description,
+    roomId: selectedEvent.value?.roomId,
+    isSeries: true,
+    seriesEnd: series.seriesEnd,
+    weekdays: series.weekdays,
+    frequency: series.frequency,
+    runDuringSchoolHolidays: series.runDuringSchoolHolidays,
+  });
+
+  isEditing.value = true;
+}
+
 const calendarOptions = computed<CalendarOptions>(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
   locale: deLocale,
@@ -158,6 +278,28 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     },
   },
   eventClick: (info: EventClickArg) => {
+    if (info.event.extendedProps.seriesId) {
+      selectedEvent.value = {
+        id: info.event.id,
+        title: info.event.title,
+        description: info.event.extendedProps.description,
+        start: info.event.start?.toISOString() || '',
+        end: info.event.end?.toISOString() || '',
+        allDay: info.event.allDay,
+        color: info.event.backgroundColor,
+        roomId: info.event.extendedProps.roomId,
+        roomTitle: info.event.extendedProps.roomTitle,
+        userId: info.event.extendedProps.userId,
+        userName: info.event.extendedProps.userName,
+        isBackground: info.event.extendedProps.isBackground,
+        seriesId: info.event.extendedProps.seriesId,
+      };
+
+      showSeriesChoiceModal.value = true;
+
+      return;
+    }
+
     selectedEvent.value = {
       id: info.event.id,
       title: info.event.title,
@@ -171,6 +313,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       userId: info.event.extendedProps.userId,
       userName: info.event.extendedProps.userName,
       isBackground: info.event.extendedProps.isBackground,
+      seriesId: info.event.extendedProps.seriesId,
     };
 
     isEditing.value = true;
@@ -257,6 +400,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
               userId: e.userId,
               userName: e.userName,
               description: e.description,
+              seriesId: e.seriesId,
+              isBackground: e.isBackground,
             },
           };
         });
@@ -410,5 +555,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
   <EventModal :visible="showModal" :prefill="formData" :event="selectedEvent" :is-editing="isEditing"
     :can-edit="canEditEvent" :error-message="modalError" @close="closeModal" @save="handleSave" @delete="handleDelete" />
+
+  <SeriesEventChoiceModal :visible="showSeriesChoiceModal" @close="showSeriesChoiceModal = false" 
+    @single="openSingleEvent" @split="openSplitEvent" />
 
 </template>

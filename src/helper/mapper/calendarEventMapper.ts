@@ -16,6 +16,6 @@ export function mapBackendEvent(e: BackendEvent): CalendarEvent {
     userId: e.user_id,
     userName: e.user_name,
     isBackground: e.isBackground,
-    rrule: e.rrule,
+    seriesId: e.seriesid,
   };
 }

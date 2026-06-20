@@ -13,8 +13,9 @@ export function useEventForm() {
     endDate: '',
 
     isSeries: false,
-    repeatType: '' as '' | 'weekly' | 'biweekly' | 'monthly',
+    frequency: 'WEEKLY' as 'WEEKLY' | 'BIWEEKLY',
     endSeriesDate: '',
+    runDuringSchoolHolidays: false,
   });
 
   const customDates = ref<{ id: number; value: string }[]>([]);
@@ -29,7 +30,9 @@ export function useEventForm() {
     () => form.value.isSeries,
     (val) => {
       if (!val) {
-        form.value.repeatType = '';
+        form.value.frequency = 'WEEKLY';
+        form.value.endSeriesDate = '';
+        form.value.runDuringSchoolHolidays = false;
       }
     },
   );
@@ -47,9 +50,12 @@ export function useEventForm() {
       endDate: '',
 
       isSeries: false,
-      repeatType: '',
+      frequency: 'WEEKLY',
       endSeriesDate: '',
+      runDuringSchoolHolidays: false,
     };
+
+    validated.value = false;
   }
 
   return {

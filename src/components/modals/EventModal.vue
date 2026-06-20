@@ -6,14 +6,12 @@ import type { RoomNames } from '@/helper/interfaces/room/RoomNames';
 
 import { useEventForm } from '@/composables/useEventForm';
 import { getRoomNames } from '@/api/getRoomNames';
-import { CForm, CFormLabel } from '@coreui/vue';
+import { CCol, CForm, CFormCheck, CFormLabel } from '@coreui/vue';
+import { PrefillData } from '@/helper/interfaces/PrefillData';
 
 const props = defineProps<{
   visible: boolean;
-  prefill?: {
-    startDate?: string;
-    endDate?: string;
-  };
+  prefill?: PrefillData;
   event?: CalendarEvent | null;
   isEditing?: boolean;
   canEdit?: boolean;
@@ -44,15 +42,23 @@ onMounted(async () => {
   }
 });
 
-/* watch(
-  () => props.visible,
-  (visible) => {
-    if (visible && props.prefill) {
-      form.value.startDate = props.prefill.startDate || ''
-      form.value.endDate = props.prefill.endDate || ''
+watch(
+  () => props.prefill,
+  (prefill) => {
+    if (!prefill) {
+      return;
     }
+
+    form.value.isSeries = prefill.isSeries ?? false;
+    form.value.frequency = prefill.frequency ?? 'WEEKLY';
+    form.value.endSeriesDate = prefill.endDate ?? '';
+    form.value.runDuringSchoolHolidays = prefill.runDuringSchoolHolidays ?? false;
   },
-) */
+  {
+    immediate: true,
+    deep: true,
+  },
+);
 
 watch(
   () => props.event,
@@ -168,6 +174,10 @@ function handleSubmit() {
       description: form.value.description.trim(),
       roomid: Number(form.value.room),
       categoryid: 1,
+      isSeries: form.value.isSeries,
+      frequency: form.value.frequency,
+      endSeriesDate: form.value.endSeriesDate,
+      runDuringSchoolHolidays: form.value.runDuringSchoolHolidays,
     };
 
     emit('save', payload);
@@ -278,14 +288,13 @@ function handleDelete() {
           <CCard class="mb-3">
             <CCardBody>
               <CFormLabel>Wiederholen bis</CFormLabel>
-              <CFormInput v-model="form.endSeriesDate" type="date" class="mb-3" />
+                <CFormInput v-model="form.endSeriesDate" type="date" class="mb-3" />
               <CFormLabel>Wiederholungen</CFormLabel>
-              <CFormSelect v-model="form.repeatType">
-                <option value="">Keine Wiederholung</option>
-                <option value="weekly">Wöchentlich</option>
-                <option value="biweekly">14-tägig</option>
-                <option value="monthly">Monatlich</option>
-              </CFormSelect>
+                <CFormSelect v-model="form.frequency" class="mb-3">
+                  <option value="WEEKLY">Wöchentlich</option>
+                  <option value="BIWEEKLY">Zweiwöchentlich</option>
+                </CFormSelect>
+                  <CFormCheck v-model="form.runDuringSchoolHolidays" label="Termine finden während der Ferien statt?"></CFormCheck>
             </CCardBody>
           </CCard>
         </CCollapse>

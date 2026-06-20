@@ -11,5 +11,5 @@ export interface BackendEvent {
   user_id: number;
   user_name: string;
   isBackground: boolean;
-  rrule: string;
+  seriesid?: number | null;
 }
