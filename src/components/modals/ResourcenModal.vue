@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { getResourceNames } from '@/api/getResourceNames';
+import type { ResourceNames } from '@/helper/interfaces/resource/ResourceNames';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -23,6 +25,17 @@ export interface BookingPayload {
   color: string;
 }
 
+// ─── Ressourcen laden ─────────────────────────────────────────────────────────
+const resources = ref<ResourceNames[]>([]);
+
+onMounted(async () => {
+  try {
+    resources.value = await getResourceNames();
+  } catch (err) {
+    console.error('Fehler beim Laden der Ressourcen:', err);
+  }
+});
+
 // ─── Formular-State ───────────────────────────────────────────────────────────
 const form = ref({
   'create-ressource-modal-description': '',
@@ -38,7 +51,6 @@ function onStartChange() {
   const start = form.value['create-ressource-modal-start'];
   if (!start) return;
 
-  // End auf Start + 1 Tag vorausfüllen (überschreibt nur, wenn leer ODER vor neuem Start)
   const nextDay = new Date(start);
   nextDay.setDate(nextDay.getDate() + 1);
   const nextDayStr = nextDay.toISOString().slice(0, 10);
@@ -57,6 +69,13 @@ const endDateInvalid = computed(
       form.value['create-ressource-modal-end'] <
         form.value['create-ressource-modal-start']
     ),
+);
+
+// ─── Gewählte Ressource (für Farbe im Payload) ────────────────────────────────
+const selectedResource = computed(() =>
+  resources.value.find(
+    (r) => String(r.id) === form.value['create-ressource-modal-resource'],
+  ),
 );
 
 // ─── Öffentliche Methode: Datum vorausfüllen (via defineExpose) ───────────────
@@ -80,12 +99,12 @@ function handleSubmit() {
 
   const payload: BookingPayload = {
     id: String(Date.now()),
-    title: form.value['create-ressource-modal-resource'],
+    title: selectedResource.value?.title ?? form.value['create-ressource-modal-resource'],
     start: form.value['create-ressource-modal-start'],
     end: form.value['create-ressource-modal-end'] || undefined,
     description: form.value['create-ressource-modal-description'].trim(),
     resource: form.value['create-ressource-modal-resource'],
-    color: '#321fdb',
+    color: selectedResource.value?.color ?? '#321fdb',
   };
 
   emit('saved', payload);
@@ -145,9 +164,8 @@ function resetForm() {
                 validated && !form['create-ressource-modal-description'].trim()
               "
             />
-            <CFormFeedback invalid
-              >Bitte eine Beschreibung eingeben.</CFormFeedback
-            >
+            <CFormFeedback invalid>
+              Bitte eine Beschreibung eingeben.</CFormFeedback>
           </CCol>
         </CRow>
 
@@ -164,14 +182,17 @@ function resetForm() {
               :invalid="validated && !form['create-ressource-modal-resource']"
             >
               <option value="">— auswählen —</option>
-              <option value="Beamer">Beamer</option>
-              <option value="Auto">Auto</option>
-              <option value="Floorspots">Floorspots</option>
-              <option value="Moderationskoffer">Moderationskoffer</option>
+              <option
+                v-for="resource in resources"
+                :key="resource.id"
+                :value="String(resource.id)"
+              >
+                {{ resource.title }}
+              </option>
             </CFormSelect>
-            <CFormFeedback invalid
-              >Bitte eine Ressource auswählen.</CFormFeedback
-            >
+            <CFormFeedback invalid>
+              Bitte eine Ressource auswählen.
+            </CFormFeedback>
           </CCol>
         </CRow>
 
@@ -193,7 +214,9 @@ function resetForm() {
           </CCol>
 
           <CCol md="6">
-            <CFormLabel for="create-ressource-modal-end"> Enddatum </CFormLabel>
+            <CFormLabel for="create-ressource-modal-end">
+              Enddatum
+            </CFormLabel>
             <CFormInput
               id="create-ressource-modal-end"
               v-model="form['create-ressource-modal-end']"
@@ -202,7 +225,7 @@ function resetForm() {
               :min="form['create-ressource-modal-start'] || undefined"
               :invalid="validated && endDateInvalid"
             />
-            <CFormFeedback invalid> Pflichtfeld </CFormFeedback>
+            <CFormFeedback invalid>Pflichtfeld.</CFormFeedback>
           </CCol>
         </CRow>
       </CForm>

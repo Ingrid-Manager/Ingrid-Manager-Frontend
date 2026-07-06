@@ -15,8 +15,8 @@ import listPlugin from '@fullcalendar/list';
 import deLocale from '@fullcalendar/core/locales/de';
 
 // ─── Modal-Komponente ─────────────────────────────────────────────────────────
-import RessourcenModal from '@/components/modals/RessourcenModal.vue';
-import type { BookingPayload } from '@/components/modals/RessourcenModal.vue';
+import RessourcenModal from '@/components/modals/ResourcenModal.vue';
+import type { BookingPayload } from '@/components/modals/ResourcenModal.vue';
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 interface CalendarEvent {

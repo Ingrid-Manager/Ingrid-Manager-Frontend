@@ -1,5 +1,5 @@
-<script setup>
-import { ref, reactive } from 'vue';
+<script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue';
 import { cilPlus, cilPencil, cilTrash, cilSave } from '@coreui/icons';
 import {
   CCard,
@@ -20,13 +20,17 @@ import {
   CModalFooter,
   CFormLabel,
   CFormInput,
-  CFormCheck,
   CFormFeedback,
+  CAlert,
 } from '@coreui/vue';
 import CIcon from '@coreui/icons-vue';
+import { getResource } from '@/api/getResource';
+import { createResource } from '@/api/createResource';
+import { updateResource } from '@/api/updateResource';
+import { deleteResource } from '@/api/deleteResource';
+import type { ResourceNames } from '@/helper/interfaces/resource/ResourceNames';
 
-const orgPrefix = 'OrgName';
-
+// ─── Palette ──────────────────────────────────────────────────────────────────
 const palette = [
   '#008000',
   '#003d79',
@@ -40,56 +44,51 @@ const palette = [
   '#6a5acd',
 ];
 
-const resources = ref([
-  {
-    id: 'OrgName.1',
-    name: 'Beamer',
-    color: '#008000',
-    requiresConfirmation: false,
-  },
-  {
-    id: 'OrgName.2',
-    name: 'Floorspots',
-    color: '#003d79',
-    requiresConfirmation: true,
-  },
-  {
-    id: 'OrgName.3',
-    name: 'Auto',
-    color: '#0008ff',
-    requiresConfirmation: false,
-  },
-]);
+// ─── State ────────────────────────────────────────────────────────────────────
+const resources = ref<ResourceNames[]>([]);
+const loading = ref(false);
+const errorMessage = ref('');
 
 const modalVisible = ref(false);
 const isEditMode = ref(false);
 const deleteModalVisible = ref(false);
-const resourceToDelete = ref(null);
+const resourceToDelete = ref<ResourceNames | null>(null);
 const nameError = ref(false);
+const saving = ref(false);
 
 const form = reactive({
-  id: '',
-  name: '',
+  id: 0,
+  title: '',
   color: palette[0],
-  requiresConfirmation: false,
-  mail: '',
+  manager_email: '',
+  inventoryid: '',
 });
 
-function generateNextId() {
-  const regex = new RegExp(`^${orgPrefix.replace('.', '\\.')}\\.(\\d+)$`);
-  const max = resources.value.reduce((m, r) => {
-    const match = r.id.match(regex);
-    return match ? Math.max(m, parseInt(match[1], 10)) : m;
-  }, 0);
-  return `${orgPrefix}.${max + 1}`;
+// ─── Resourcen laden ─────────────────────────────────────────────────────────
+async function loadResources() {
+  loading.value = true;
+  errorMessage.value = '';
+  try {
+    resources.value = await getResource();
+  } catch (err) {
+    console.error('Fehler beim Laden der Ressourcen:', err);
+    errorMessage.value = 'Ressourcen konnten nicht geladen werden.';
+  } finally {
+    loading.value = false;
+  }
 }
 
+onMounted(() => {
+  loadResources();
+});
+
+// ─── Modal öffnen ─────────────────────────────────────────────────────────────
 function resetForm() {
-  form.id = generateNextId();
-  form.name = '';
+  form.id = 0;
+  form.title = '';
   form.color = palette[0];
-  form.requiresConfirmation = false;
-  form.mail = '';
+  form.manager_email = '';
+  form.inventoryid = '';
   nameError.value = false;
 }
 
@@ -99,13 +98,13 @@ function openCreateModal() {
   modalVisible.value = true;
 }
 
-function openEditModal(resource) {
+function openEditModal(resource: ResourceNames) {
   isEditMode.value = true;
   form.id = resource.id;
-  form.name = resource.name;
+  form.title = resource.title;
   form.color = resource.color;
-  form.requiresConfirmation = resource.requiresConfirmation;
-  form.mail = '';
+  form.manager_email = resource.manager_email ?? '';
+  form.inventoryid = resource.inventoryid ?? '';
   nameError.value = false;
   modalVisible.value = true;
 }
@@ -114,50 +113,78 @@ function closeModal() {
   modalVisible.value = false;
 }
 
-function selectColor(color) {
+function selectColor(color: string) {
   form.color = color;
 }
-function onColorInputChange(e) {
-  form.color = e.target.value;
+
+function onColorInputChange(e: Event) {
+  form.color = (e.target as HTMLInputElement).value;
 }
 
-function submitForm() {
-  if (!form.name.trim()) {
+// ─── Speichern ────────────────────────────────────────────────────────────────
+async function submitForm() {
+  if (!form.title.trim()) {
     nameError.value = true;
     return;
   }
   nameError.value = false;
+  saving.value = true;
+  errorMessage.value = '';
 
-  if (isEditMode.value) {
-    const idx = resources.value.findIndex((r) => r.id === form.id);
-    if (idx !== -1) resources.value[idx] = { ...form, name: form.name.trim() };
-  } else {
-    resources.value.push({
-      id: form.id,
-      name: form.name.trim(),
+  try {
+    const payload = {
+      title: form.title.trim(),
       color: form.color,
-      requiresConfirmation: form.requiresConfirmation,
-    });
+      manager_email: form.manager_email || undefined,
+      inventoryid: form.inventoryid || undefined,
+    };
+
+    if (isEditMode.value) {
+      await updateResource(form.id, payload);
+    } else {
+      await createResource(payload);
+    }
+
+    await loadResources();
+    closeModal();
+  } catch (err) {
+    console.error('Fehler beim Speichern:', err);
+    errorMessage.value = 'Resource konnte nicht gespeichert werden.';
+  } finally {
+    saving.value = false;
   }
-  closeModal();
 }
 
-function confirmDelete(resource) {
+// ─── Löschen ──────────────────────────────────────────────────────────────────
+function confirmDelete(resource: ResourceNames) {
   resourceToDelete.value = resource;
   deleteModalVisible.value = true;
 }
 
-function deleteResource() {
-  resources.value = resources.value.filter(
-    (r) => r.id !== resourceToDelete.value.id,
-  );
-  deleteModalVisible.value = false;
-  resourceToDelete.value = null;
+async function DeleteResource() {
+  if (!resourceToDelete.value) return;
+  errorMessage.value = '';
+  try {
+    await deleteResource(resourceToDelete.value.id);
+    await loadResources();
+  } catch (err) {
+    console.error('Fehler beim Löschen:', err);
+    errorMessage.value = 'Resource konnte nicht gelöscht werden.';
+  } finally {
+    deleteModalVisible.value = false;
+    resourceToDelete.value = null;
+  }
 }
 </script>
+
 <template>
   <div class="flex-grow-1 d-flex flex-column align-items-center pt-3 pb-4">
     <div class="w-100 d-flex flex-column flex-grow-1" style="max-width: 1200px">
+
+      <CAlert v-if="errorMessage" color="danger" class="mb-3">
+        {{ errorMessage }}
+      </CAlert>
+
       <CCard class="flex-grow-1 d-flex flex-column overflow-hidden">
         <CCardHeader class="d-flex justify-content-between align-items-center">
           <strong>Ressourcen Verwaltung</strong>
@@ -174,68 +201,63 @@ function deleteResource() {
                 <CTableRow>
                   <CTableHeaderCell>Farbe</CTableHeaderCell>
                   <CTableHeaderCell>Bezeichnung</CTableHeaderCell>
-                  <CTableHeaderCell>Eindeutige ID</CTableHeaderCell>
-                  <CTableHeaderCell>Bestätigung</CTableHeaderCell>
+                  <CTableHeaderCell>Inventar-ID</CTableHeaderCell>
+                  <CTableHeaderCell>Manager E-Mail</CTableHeaderCell>
                   <CTableHeaderCell class="text-end">Aktionen</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
-                <CTableRow v-for="resource in resources" :key="resource.id">
-                  <CTableDataCell>
-                    <div
-                      :style="{ background: resource.color }"
-                      style="
-                        width: 24px;
-                        height: 24px;
-                        border-radius: 4px;
-                        border: 1px solid rgba(0, 0, 0, 0.12);
-                      "
-                    />
-                  </CTableDataCell>
-                  <CTableDataCell>{{ resource.name }}</CTableDataCell>
-                  <CTableDataCell>
-                    <CBadge color="secondary" shape="rounded-pill">{{
-                      resource.id
-                    }}</CBadge>
-                  </CTableDataCell>
-                  <CTableDataCell>
-                    <CBadge
-                      :color="
-                        resource.requiresConfirmation ? 'warning' : 'success'
-                      "
-                    >
-                      {{ resource.requiresConfirmation ? 'Ja' : 'Nein' }}
-                    </CBadge>
-                  </CTableDataCell>
-                  <CTableDataCell class="text-end">
-                    <CButton
-                      color="secondary"
-                      size="sm"
-                      class="me-2"
-                      @click="openEditModal(resource)"
-                    >
-                      <CIcon :icon="cilPencil" class="me-1" />
-                      Bearbeiten
-                    </CButton>
-                    <CButton
-                      color="danger"
-                      size="sm"
-                      variant="outline"
-                      @click="confirmDelete(resource)"
-                    >
-                      <CIcon :icon="cilTrash" class="me-1" />
-                      Löschen
-                    </CButton>
+                <CTableRow v-if="loading">
+                  <CTableDataCell colspan="5" class="text-center py-4">
+                    Wird geladen…
                   </CTableDataCell>
                 </CTableRow>
-                <CTableRow v-if="resources.length === 0">
-                  <CTableDataCell
-                    colspan="5"
-                    class="text-center text-muted py-4"
-                  >
-                    Keine Ressourcen vorhanden.
+
+                <CTableRow v-else-if="resources.length === 0">
+                  <CTableDataCell colspan="5" class="text-center text-muted py-4">
+                    Keine Resourcen vorhanden.
                   </CTableDataCell>
                 </CTableRow>
+
+                <template v-else>
+                  <CTableRow v-for="resource in resources" :key="resource.id">
+                    <CTableDataCell>
+                      <div
+                        :style="{ background: resource.color }"
+                        style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12);"
+                      />
+                    </CTableDataCell>
+                    <CTableDataCell>{{ resource.title }}</CTableDataCell>
+                    <CTableDataCell>
+                      <CBadge color="secondary" shape="rounded-pill">
+                        {{ resource.inventoryid || '—' }}
+                      </CBadge>
+                    </CTableDataCell>
+                    <CTableDataCell>
+                      {{ resource.manager_email || '—' }}
+                    </CTableDataCell>
+                    <CTableDataCell class="text-end">
+                      <CButton
+                        color="secondary"
+                        size="sm"
+                        class="me-2"
+                        @click="openEditModal(resource)"
+                      >
+                        <CIcon :icon="cilPencil" class="me-1" />
+                        Bearbeiten
+                      </CButton>
+                      <CButton
+                        color="danger"
+                        size="sm"
+                        variant="outline"
+                        @click="confirmDelete(resource)"
+                      >
+                        <CIcon :icon="cilTrash" class="me-1" />
+                        Löschen
+                      </CButton>
+                    </CTableDataCell>
+                  </CTableRow>
+                </template>
               </CTableBody>
             </CTable>
           </div>
@@ -243,32 +265,33 @@ function deleteResource() {
       </CCard>
     </div>
 
-    <!-- Erstellen / Bearbeiten Modal -->
+    <!-- ── Erstellen / Bearbeiten Modal ───────────────────────────────────── -->
     <CModal
       :visible="modalVisible"
-      @close="closeModal"
       backdrop="static"
       alignment="center"
+      @close="closeModal"
     >
       <CModalHeader>
-        <CModalTitle>{{
-          isEditMode ? 'Ressource bearbeiten' : 'Neue Ressource erstellen'
-        }}</CModalTitle>
+        <CModalTitle>
+          {{ isEditMode ? 'Resource bearbeiten' : 'Neue Resource erstellen' }}
+        </CModalTitle>
       </CModalHeader>
+
       <CModalBody>
+        <!-- Bezeichnung -->
         <div class="mb-3">
           <CFormLabel for="resName">Bezeichnung</CFormLabel>
           <CFormInput
             id="resName"
-            v-model="form.name"
+            v-model="form.title"
             :invalid="nameError"
-            placeholder="z. B. Kirche, Saal, …"
+            placeholder="z. B. Beamer, Auto, …"
           />
-          <CFormFeedback invalid
-            >Bitte eine Bezeichnung eingeben.</CFormFeedback
-          >
+          <CFormFeedback invalid>Bitte eine Bezeichnung eingeben.</CFormFeedback>
         </div>
 
+        <!-- Farbe -->
         <div class="mb-3">
           <CFormLabel>Farbe im Kalender</CFormLabel>
           <div class="d-flex flex-wrap gap-1 mb-2">
@@ -277,9 +300,7 @@ function deleteResource() {
               :key="color"
               type="button"
               class="color-swatch"
-              :class="{
-                selected: form.color.toLowerCase() === color.toLowerCase(),
-              }"
+              :class="{ selected: form.color.toLowerCase() === color.toLowerCase() }"
               :style="{ background: color }"
               :title="color"
               @click="selectColor(color)"
@@ -297,55 +318,57 @@ function deleteResource() {
           </div>
         </div>
 
+        <!-- Manager E-Mail -->
         <div class="mb-3">
-          <CFormCheck
-            id="resRequiresConfirmation"
-            v-model="form.requiresConfirmation"
-            label="Bestätigung erforderlich"
-          />
-        </div>
-        <div class="mb-1">
-          <CFormLabel for="resmail">E-Mail</CFormLabel>
+          <CFormLabel for="resmail">Manager E-Mail</CFormLabel>
           <CFormInput
             id="resmail"
-            :value="form.mail"
+            v-model="form.manager_email"
+            type="email"
             placeholder="Standardmäßig die Org. Mailadresse"
           />
           <div class="form-text text-muted">
             Mailadresse zur Info/Bestätigung
           </div>
         </div>
+
+        <!-- Inventar-ID -->
         <div class="mb-1">
-          <CFormLabel for="resId">ID</CFormLabel>
-          <CFormInput id="resId" :value="form.id" />
+          <CFormLabel for="resId">Inventar-ID</CFormLabel>
+          <CFormInput
+            id="resId"
+            v-model="form.inventoryid"
+            placeholder="z. B. INV-001"
+          />
           <div class="form-text text-muted">
-            Die ID kann eine Inventarnumer o.ä. sein.
+            Kann eine Inventarnummer o.ä. sein.
           </div>
         </div>
       </CModalBody>
+
       <CModalFooter>
-        <CButton color="secondary" variant="outline" @click="closeModal"
-          >Abbrechen</CButton
-        >
-        <CButton color="primary" @click="submitForm">
+        <CButton color="secondary" variant="outline" @click="closeModal">
+          Abbrechen
+        </CButton>
+        <CButton color="primary" :disabled="saving" @click="submitForm">
           <CIcon :icon="cilSave" class="me-2" />
-          Speichern
+          {{ saving ? 'Wird gespeichert…' : 'Speichern' }}
         </CButton>
       </CModalFooter>
     </CModal>
 
-    <!-- Löschen Bestätigungsdialog -->
+    <!-- ── Löschen Bestätigungsdialog ─────────────────────────────────────── -->
     <CModal
       :visible="deleteModalVisible"
-      @close="deleteModalVisible = false"
       alignment="center"
       size="sm"
+      @close="deleteModalVisible = false"
     >
       <CModalHeader>
-        <CModalTitle>Ressource löschen</CModalTitle>
+        <CModalTitle>Resource löschen</CModalTitle>
       </CModalHeader>
       <CModalBody>
-        Möchtest du <strong>{{ resourceToDelete?.name }}</strong> wirklich
+        Möchtest du <strong>{{ resourceToDelete?.title }}</strong> wirklich
         löschen? Diese Aktion kann nicht rückgängig gemacht werden.
       </CModalBody>
       <CModalFooter>
@@ -353,9 +376,10 @@ function deleteResource() {
           color="secondary"
           variant="outline"
           @click="deleteModalVisible = false"
-          >Abbrechen</CButton
         >
-        <CButton color="danger" @click="deleteResource">
+          Abbrechen
+        </CButton>
+        <CButton color="danger" @click="DeleteResource">
           <CIcon :icon="cilTrash" class="me-2" />
           Löschen
         </CButton>
@@ -371,9 +395,7 @@ function deleteResource() {
   border-radius: 4px;
   border: 2px solid transparent;
   cursor: pointer;
-  transition:
-    transform 0.12s ease,
-    border-color 0.12s ease;
+  transition: transform 0.12s ease, border-color 0.12s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 .color-swatch:hover {

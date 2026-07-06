@@ -64,10 +64,7 @@ onMounted(() => {
             <CDropdownItem href="/ressourcen/verwaltung"
             >Ressourcenverwaltung</CDropdownItem
             >
-            <CDropdownItem href="/admin/settings"
-            >Anwendungseinstellungen</CDropdownItem
-            >
-            <CDropdownItem href="/admin/thermostats">Thermostate</CDropdownItem>
+            <CDropdownItem href="/admin/settings">Anwendungseinstellungen</CDropdownItem>
             <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
           </CDropdownMenu>
         </CDropdown>
