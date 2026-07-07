@@ -7,6 +7,7 @@ import type {
   CalendarOptions,
   EventClickArg,
   DateSelectArg,
+  EventSourceFuncArg,
 } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -14,75 +15,44 @@ import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import deLocale from '@fullcalendar/core/locales/de';
 
-// ─── Modal-Komponente ─────────────────────────────────────────────────────────
-import RessourcenModal from '@/components/modals/ResourcenModal.vue';
+// ─── Modal ────────────────────────────────────────────────────────────────────
+import ResourcenModal from '@/components/modals/ResourcenModal.vue';
 import type { BookingPayload } from '@/components/modals/ResourcenModal.vue';
 
+// ─── API ──────────────────────────────────────────────────────────────────────
+import { fetchResourceEvents } from '@/api/getResourceEvents';
+import { createResourceEvent } from '@/api/createResourceEvent';
+import { updateResourceEvent } from '@/api/updateResourceEvent';
+import { deleteResourceEvent } from '@/api/deleteResourceEvent';
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+import { useAuthStore } from '@/stores/auth.store';
+
 // ─── Typen ────────────────────────────────────────────────────────────────────
-interface CalendarEvent {
+interface ResourceCalendarEvent {
   id: string;
   title: string;
   start: string;
   end?: string;
   color?: string;
-  extendedProps?: Record<string, unknown>;
+  resourceId?: number;
+  resourceTitle?: string;
+  userId?: number;
+  userName?: string;
 }
 
-// ─── Beispiel-Events (später durch API-Daten ersetzen) ────────────────────────
-const calendarEvents = ref<CalendarEvent[]>([
-  { id: '1',  title: 'Beamer',           start: '2026-05-01', end: '2026-05-02', color: '#321fdb' },
-  { id: '2',  title: 'Floorspots',       start: '2026-05-03', end: '2026-05-05', color: '#2eb85c' },
-  { id: '3',  title: 'Auto (Kleinwagen)',start: '2026-05-04', end: '2026-05-06', color: '#e55353' },
-  { id: '4',  title: 'Moderationskoffer',start: '2026-05-07', color: '#f9b115' },
-  { id: '5',  title: 'Beamer',           start: '2026-05-08', end: '2026-05-09', color: '#321fdb' },
-  { id: '6',  title: 'Floorspots',       start: '2026-05-10', end: '2026-05-12', color: '#2eb85c' },
-  { id: '7',  title: 'Auto (Transporter)',start: '2026-05-11', end: '2026-05-13', color: '#e55353' },
-  { id: '8',  title: 'Moderationskoffer',start: '2026-05-14', color: '#f9b115' },
-  { id: '9',  title: 'Beamer',           start: '2026-05-15', end: '2026-05-16', color: '#321fdb' },
-  { id: '10', title: 'Floorspots',       start: '2026-05-17', end: '2026-05-19', color: '#2eb85c' },
-  { id: '11', title: 'Auto (Kleinwagen)',start: '2026-05-18', end: '2026-05-20', color: '#e55353' },
-  { id: '12', title: 'Moderationskoffer',start: '2026-05-21', color: '#f9b115' },
-  { id: '13', title: 'Beamer',           start: '2026-05-22', end: '2026-05-23', color: '#321fdb' },
-  { id: '14', title: 'Floorspots',       start: '2026-05-24', end: '2026-05-25', color: '#2eb85c' },
-  { id: '15', title: 'Auto (Transporter)',start: '2026-05-26', end: '2026-05-28', color: '#e55353' },
-  { id: '16', title: 'Moderationskoffer',start: '2026-05-29', color: '#f9b115' },
-  { id: '17', title: 'Beamer',           start: '2026-05-30', end: '2026-05-31', color: '#321fdb' },
-  { id: '18', title: 'Floorspots',       start: '2026-06-01', end: '2026-06-03', color: '#2eb85c' },
-  { id: '19', title: 'Auto (Kleinwagen)',start: '2026-06-04', end: '2026-06-05', color: '#e55353' },
-  { id: '20', title: 'Moderationskoffer',start: '2026-06-06', color: '#f9b115' },
-  { id: '21', title: 'Beamer',           start: '2026-04-10', end: '2026-04-11', color: '#321fdb' },
-  { id: '22', title: 'Floorspots',       start: '2026-04-14', end: '2026-04-16', color: '#2eb85c' },
-  { id: '23', title: 'Auto (Transporter)',start: '2026-04-20', end: '2026-04-22', color: '#e55353' },
-  { id: '24', title: 'Moderationskoffer',start: '2026-04-25', color: '#f9b115' },
-  { id: '25', title: 'Beamer',           start: '2026-04-28', end: '2026-04-29', color: '#321fdb' },
-]);
-
-// ─── Modal-Ref & Sichtbarkeit ─────────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────────────────────
+const auth = useAuthStore();
+const calendarRef = ref();
 const showModal = ref(false);
-const modalRef = ref<InstanceType<typeof RessourcenModal> | null>(null);
+const modalRef = ref<InstanceType<typeof ResourcenModal> | null>(null);
+const modalError = ref('');
 
-function openModal() {
-  showModal.value = true;
-}
+const selectedEvent = ref<ResourceCalendarEvent | null>(null);
+const isEditing = ref(false);
+const prefillData = ref<{ start?: string; end?: string }>({});
 
-function closeModal() {
-  showModal.value = false;
-}
-
-function onBookingSaved(payload: BookingPayload) {
-  const newEvent: CalendarEvent = {
-    id: payload.id,
-    title: payload.title,
-    start: payload.start,
-    end: payload.end,
-    color: payload.color,
-  };
-  calendarEvents.value = [...calendarEvents.value, newEvent];
-
-    console.log('Neue Ressourcenbuchung:', payload);
-}
-
-// ─── Breakpoint & Responsive Kalendergröße ───────────────────────────────────
+// ─── Breakpoint ───────────────────────────────────────────────────────────────
 const windowWidth = ref(window.innerWidth);
 const windowHeight = ref(window.innerHeight);
 const isMobile = computed(() => windowWidth.value < 900);
@@ -108,6 +78,73 @@ const calendarSizing = computed(() => {
   return { height: undefined, aspectRatio: 1.6 };
 });
 
+// ─── Bearbeitungsrecht ────────────────────────────────────────────────────────
+const canEditEvent = computed(() => {
+  const user = auth.user;
+  if (!user) return false;
+  if (!selectedEvent.value) return user.role?.name !== 'guest';
+  if (user.role?.name === 'admin' || user.role?.name === 'verwaltung') return true;
+  if (user.role?.name === 'guest') return false;
+  return user.id === selectedEvent.value.userId;
+});
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+function openModal(prefill: { start?: string; end?: string } = {}) {
+  prefillData.value = prefill;
+  modalError.value = '';
+  showModal.value = true;
+}
+
+function closeModal() {
+  showModal.value = false;
+  selectedEvent.value = null;
+  isEditing.value = false;
+  modalError.value = '';
+}
+
+// ─── Speichern ────────────────────────────────────────────────────────────────
+async function onBookingSaved(payload: BookingPayload) {
+  try {
+    if (isEditing.value && selectedEvent.value?.id) {
+      await updateResourceEvent({
+        id: Number(selectedEvent.value.id),
+        title: payload.title,
+        start: payload.start,
+        end: payload.end ?? payload.start,
+        resourceid: Number(payload.resource),
+      });
+    } else {
+      await createResourceEvent({
+        title: payload.title,
+        start: payload.start,
+        end: payload.end ?? payload.start,
+        resourceid: Number(payload.resource),
+      });
+    }
+
+    closeModal();
+    calendarRef.value?.getApi()?.refetchEvents();
+  } catch (err: any) {
+    console.error('Fehler beim Speichern:', err);
+    if (err.response?.status === 409) {
+      modalError.value = err.response.data.message;
+      return;
+    }
+    modalError.value = 'Die Buchung konnte nicht gespeichert werden.';
+  }
+}
+
+// ─── Löschen ──────────────────────────────────────────────────────────────────
+async function onBookingDeleted(id: string) {
+  try {
+    await deleteResourceEvent(Number(id));
+    calendarRef.value?.getApi()?.refetchEvents();
+  } catch (err) {
+    console.error('Fehler beim Löschen:', err);
+  }
+  closeModal();
+}
+
 // ─── FullCalendar-Optionen ────────────────────────────────────────────────────
 const calendarOptions = computed<CalendarOptions>(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
@@ -115,7 +152,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   height: calendarSizing.value.height,
   aspectRatio: calendarSizing.value.aspectRatio,
 
-initialView: isMobile.value ? 'listMonth' : 'dayGridMonth',
+  initialView: isMobile.value ? 'listMonth' : 'dayGridMonth',
 
   weekNumbers: true,
   
@@ -123,7 +160,11 @@ initialView: isMobile.value ? 'listMonth' : 'dayGridMonth',
   customButtons: {
     ressourceBuchen: {
       text: 'Ressource buchen',
-      click: () => openModal(),
+      click: () => {
+        selectedEvent.value = null;
+        isEditing.value = false;
+        openModal();
+      },
     },
   },
 
@@ -151,36 +192,84 @@ initialView: isMobile.value ? 'listMonth' : 'dayGridMonth',
   selectMirror: false,
   editable: false,
   dayMaxEvents: true,
-  
 
-  events: calendarEvents.value,
+  // ─── Events aus API laden ──────────────────────────────────────────────────
+  events: async (fetchInfo: EventSourceFuncArg) => {
+    try {
+      const events = await fetchResourceEvents(
+        fetchInfo.startStr,
+        fetchInfo.endStr,
+      );
+      return events.map((e) => ({
+        id: String(e.id),
+        title: e.title,
+        start: e.start,
+        end: e.end,
+        color: e.color,
+        extendedProps: {
+          resourceId: e.resource_id,
+          resourceTitle: e.resource_title,
+          userId: e.user_id,
+          userName: e.user_name,
+        },
+      }));
+    } catch (err) {
+      console.error('Fehler beim Laden der Events:', err);
+      return [];
+    }
+  },
 
+  // ─── Event klicken → bearbeiten ───────────────────────────────────────────
+  eventClick: (info: EventClickArg) => {
+    selectedEvent.value = {
+      id: info.event.id,
+      title: info.event.title,
+      start: info.event.start?.toISOString() || '',
+      end: info.event.end?.toISOString() || '',
+      color: info.event.backgroundColor,
+      resourceId: info.event.extendedProps.resourceId,
+      resourceTitle: info.event.extendedProps.resourceTitle,
+      userId: info.event.extendedProps.userId,
+      userName: info.event.extendedProps.userName,
+    };
+    isEditing.value = true;
+    openModal({
+      start: info.event.start?.toISOString().split('T')[0],
+      end: info.event.end?.toISOString().split('T')[0],
+    });
+  },
+
+  // ─── Datum auswählen → erstellen ──────────────────────────────────────────
   select: (info: DateSelectArg) => {
     const start = info.startStr.split('T')[0];
     const endDate = new Date(info.endStr);
     endDate.setDate(endDate.getDate() - 1);
     const end = endDate.toISOString().split('T')[0];
 
-    openModal();
+    selectedEvent.value = null;
+    isEditing.value = false;
+    openModal({ start, end });
 
     setTimeout(() => modalRef.value?.prefillDates(start, end), 0);
-  },
-
-  eventClick: (info: EventClickArg) => {
-    console.log('Event geklickt:', info.event);
   },
 }));
 </script>
 
 <template>
   <div class="calendar-wrapper">
-    <FullCalendar :options="calendarOptions" />
+    <FullCalendar ref="calendarRef" :options="calendarOptions" />
   </div>
 
-  <RessourcenModal
+  <ResourcenModal
     ref="modalRef"
     :visible="showModal"
+    :is-editing="isEditing"
+    :event="selectedEvent"
+    :can-edit="canEditEvent"
+    :prefill="prefillData"
+    :error-message="modalError"
     @close="closeModal"
     @saved="onBookingSaved"
+    @delete="onBookingDeleted"
   />
 </template>
