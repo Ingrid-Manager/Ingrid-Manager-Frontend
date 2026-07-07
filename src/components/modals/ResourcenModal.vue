@@ -1,17 +1,35 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { getResourceNames } from '@/api/getResourceNames';
 import type { ResourceNames } from '@/helper/interfaces/resource/ResourceNames';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 const props = defineProps<{
   visible: boolean;
+  isEditing?: boolean;
+  canEdit?: boolean;
+  errorMessage?: string;
+  prefill?: {
+    start?: string;
+    end?: string;
+  };
+  event?: {
+    id: string;
+    title: string;
+    start: string;
+    end?: string;
+    resourceId?: number;
+    resourceTitle?: string;
+    userId?: number;
+    userName?: string;
+  } | null;
 }>();
 
 // ─── Emits ────────────────────────────────────────────────────────────────────
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'saved', event: BookingPayload): void;
+  (e: 'delete', id: string): void;
 }>();
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
@@ -45,6 +63,34 @@ const form = ref({
 });
 
 const validated = ref(false);
+
+// ─── Event vorausfüllen beim Bearbeiten ───────────────────────────────────────
+watch(
+  () => props.event,
+  (event) => {
+    if (!event) return;
+    form.value['create-ressource-modal-description'] = event.title || '';
+    form.value['create-ressource-modal-resource'] = event.resourceId
+      ? String(event.resourceId)
+      : '';
+    form.value['create-ressource-modal-start'] =
+      event.start?.split('T')[0] || '';
+    form.value['create-ressource-modal-end'] = event.end?.split('T')[0] || '';
+  },
+  { immediate: true },
+);
+
+// ─── Prefill beim Erstellen ───────────────────────────────────────────────────
+watch(
+  () => props.prefill,
+  (prefill) => {
+    if (!prefill || props.isEditing) return;
+    if (prefill.start)
+      form.value['create-ressource-modal-start'] = prefill.start;
+    if (prefill.end) form.value['create-ressource-modal-end'] = prefill.end;
+  },
+  { immediate: true },
+);
 
 // ─── Startdatum-Handler: End automatisch auf Start + 1 Tag setzen ─────────────
 function onStartChange() {
@@ -98,8 +144,8 @@ function handleSubmit() {
   if (!form.value['create-ressource-modal-start']) return;
 
   const payload: BookingPayload = {
-    id: String(Date.now()),
-    title: selectedResource.value?.title ?? form.value['create-ressource-modal-resource'],
+    id: props.event?.id ?? String(Date.now()),
+    title: form.value['create-ressource-modal-description'].trim(),
     start: form.value['create-ressource-modal-start'],
     end: form.value['create-ressource-modal-end'] || undefined,
     description: form.value['create-ressource-modal-description'].trim(),
@@ -108,6 +154,13 @@ function handleSubmit() {
   };
 
   emit('saved', payload);
+  handleClose();
+}
+
+// ─── Löschen ──────────────────────────────────────────────────────────────────
+function handleDelete() {
+  if (!props.event?.id) return;
+  emit('delete', props.event.id);
   handleClose();
 }
 
@@ -138,18 +191,24 @@ function resetForm() {
     <CModalHeader>
       <CModalTitle>
         <CIcon name="cil-calendar" class="me-2" />
-        Ressource buchen
+        {{ isEditing ? 'Buchung bearbeiten' : 'Ressource buchen' }}
       </CModalTitle>
     </CModalHeader>
 
     <CModalBody>
+      <!-- Fehlermeldung -->
+      <CAlert v-if="errorMessage" color="danger" class="mb-3">
+        <strong>Buchung konnte nicht gespeichert werden</strong>
+        <div>{{ errorMessage }}</div>
+      </CAlert>
+
       <CForm
         id="resourceBookingForm"
         :class="{ 'was-validated': validated }"
         novalidate
         @submit.prevent="handleSubmit"
       >
-        <!-- ── Beschreibung ── -->
+        <!-- ── Beschreibung / Titel ── -->
         <CRow class="mb-3">
           <CCol>
             <CFormLabel for="create-ressource-modal-description">
@@ -160,12 +219,23 @@ function resetForm() {
               v-model="form['create-ressource-modal-description']"
               placeholder="Kurze Beschreibung"
               required
+              :disabled="!canEdit"
               :invalid="
-                validated && !form['create-ressource-modal-description'].trim()
+                validated &&
+                !form['create-ressource-modal-description'].trim()
               "
             />
             <CFormFeedback invalid>
-              Bitte eine Beschreibung eingeben.</CFormFeedback>
+              Bitte eine Beschreibung eingeben.
+            </CFormFeedback>
+          </CCol>
+        </CRow>
+
+        <!-- ── Erstellt von (nur beim Bearbeiten) ── -->
+        <CRow v-if="isEditing && event?.userName" class="mb-3">
+          <CCol>
+            <CFormLabel>Gebucht von</CFormLabel>
+            <CFormInput :model-value="event.userName" disabled />
           </CCol>
         </CRow>
 
@@ -179,6 +249,7 @@ function resetForm() {
               id="create-ressource-modal-resource"
               v-model="form['create-ressource-modal-resource']"
               required
+              :disabled="!canEdit"
               :invalid="validated && !form['create-ressource-modal-resource']"
             >
               <option value="">— auswählen —</option>
@@ -207,6 +278,7 @@ function resetForm() {
               v-model="form['create-ressource-modal-start']"
               type="date"
               required
+              :disabled="!canEdit"
               :invalid="validated && !form['create-ressource-modal-start']"
               @change="onStartChange"
             />
@@ -222,10 +294,13 @@ function resetForm() {
               v-model="form['create-ressource-modal-end']"
               type="date"
               required
+              :disabled="!canEdit"
               :min="form['create-ressource-modal-start'] || undefined"
               :invalid="validated && endDateInvalid"
             />
-            <CFormFeedback invalid>Pflichtfeld.</CFormFeedback>
+            <CFormFeedback invalid>
+              Das Enddatum darf nicht vor dem Startdatum liegen.
+            </CFormFeedback>
           </CCol>
         </CRow>
       </CForm>
@@ -235,8 +310,13 @@ function resetForm() {
       <CButton color="secondary" variant="outline" @click="handleClose">
         Abbrechen
       </CButton>
-      <CButton color="primary" @click="handleSubmit">
-        Buchung speichern
+
+      <CButton v-if="isEditing && canEdit" color="danger" @click="handleDelete">
+        Löschen
+      </CButton>
+
+      <CButton v-if="canEdit" color="primary" @click="handleSubmit">
+        {{ isEditing ? 'Speichern' : 'Buchung speichern' }}
       </CButton>
     </CModalFooter>
   </CModal>
