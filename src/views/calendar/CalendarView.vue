@@ -70,7 +70,6 @@ const selectedEvent = ref<CalendarEvent | null>(null);
 const isEditing = ref(false);
 const auth = useAuthStore();
 const showSeriesChoiceModal = ref(false);
-
 const calendarRef = ref();
 const showModal = ref(false);
 const formData = ref<PrefillData>({
@@ -261,6 +260,8 @@ async function openSplitEvent() {
 
   isEditing.value = true;
 }
+// ─── Gastprüfung ──────────────────────────────────────────────────────────────
+const isGuest = computed(() => auth.user?.role?.name === 'guest');
 
 const calendarOptions = computed<CalendarOptions>(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
@@ -329,18 +330,18 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
   // Header-Toolbar mit Ansichts-Umschalter
 
-  headerToolbar: isMobile.value
-    ? {
-      left: 'prev,next',
-      center: 'title',
-      right: 'ressourceBuchen',
-    }
-    : {
-      //left: 'toggleSidebar prev,next today ressourceBuchen',
-      left: 'prev,next today ressourceBuchen',
-      center: 'title',
-      right: 'dayGridMonth,timeGridWeek,listMonth',
-    },
+headerToolbar: isMobile.value
+  ? {
+    left: 'prev,next',
+    center: 'title',
+    right: isGuest.value ? '' : 'ressourceBuchen',
+  }
+  : {
+    //left: 'toggleSidebar prev,next today ressourceBuchen',
+    left: isGuest.value ? 'prev,next today' : 'prev,next today ressourceBuchen',
+    center: 'title',
+    right: 'dayGridMonth,timeGridWeek,listMonth',
+  },
   views: {
     listWeek: {
       buttonText: 'Liste',
@@ -439,8 +440,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     const room =
       info.event.extendedProps.roomTitle || '';
 
-    const description =
-      info.event.extendedProps.description || '';
+const description =
+  isGuest.value ? '' : (info.event.extendedProps.description || '');
 
     const el = document.createElement('div');
 

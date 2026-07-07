@@ -79,11 +79,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/Settings.vue'),
       },
       {
-        path: 'thermostats',
-        name: 'Thermostate',
-        component: () => import('@/views/admin/Thermostats.vue'),
-      },
-      {
         path: 'logs',
         name: 'Aktivitäten',
         component: () => import('@/views/admin/Logs.vue'),

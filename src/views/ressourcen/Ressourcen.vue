@@ -78,6 +78,9 @@ const calendarSizing = computed(() => {
   return { height: undefined, aspectRatio: 1.6 };
 });
 
+// ─── Gastprüfung ──────────────────────────────────────────────────────────────
+const isGuest = computed(() => auth.user?.role?.name === 'guest');
+
 // ─── Bearbeitungsrecht ────────────────────────────────────────────────────────
 const canEditEvent = computed(() => {
   const user = auth.user;
@@ -172,10 +175,10 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     ? {
         left: 'prev,next',
         center: 'title',
-        right: 'ressourceBuchen',
+        right: isGuest.value ? '' : 'ressourceBuchen',
       }
     : {
-        left: 'prev,next today ressourceBuchen',
+        left: isGuest.value ? 'prev,next today' : 'prev,next today ressourceBuchen',
         center: 'title',
         right: 'dayGridMonth,listMonth',
       },
