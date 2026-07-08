@@ -10,8 +10,8 @@ const route = useRoute();
 const auth = useAuthStore();
 const headerClassNames = ref<string>('mb-4 p-0');
 const isGuest = computed(() => auth.user?.role?.name === 'guest');
-const canAccessAdmin = computed(() => auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',
-);
+const canAccessAdmin = computed(() => auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',);
+const showTerminImport = computed(() => import.meta.env.VITE_TERMIN_IMPORT === 'true');
 type ColorMode = 'light' | 'dark' | 'auto';
 
 const { colorMode, setColorMode } = useColorModes(
@@ -63,6 +63,7 @@ onMounted(() => {
     <CDropdownItem href="/admin/rooms">Raumverwaltung</CDropdownItem>
     <CDropdownItem href="/ressourcen/verwaltung">Ressourcenverwaltung</CDropdownItem>
     <CDropdownItem href="/admin/settings">Anwendungseinstellungen</CDropdownItem>
+    <CDropdownItem v-if="showTerminImport" href="/admin/import">Termin Import</CDropdownItem>
     <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
   </CDropdownMenu>
 </CDropdown>
@@ -89,6 +90,7 @@ onMounted(() => {
       <CDropdownItem href="/admin/rooms">Raumverwaltung</CDropdownItem>
       <CDropdownItem href="/ressourcen/verwaltung">Ressourcenverwaltung</CDropdownItem>
       <CDropdownItem href="/admin/settings">Anwendungseinstellungen</CDropdownItem>
+      <CDropdownItem v-if="showTerminImport" href="/admin/import">Termin Import</CDropdownItem>
       <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
     </CDropdownMenu>
   </CDropdown>

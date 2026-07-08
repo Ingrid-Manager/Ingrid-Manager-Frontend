@@ -9,7 +9,6 @@ import { useAuthStore } from '@/stores/auth.store'
 
 // Layouts
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
-
 const routes: RouteRecordRaw[] = [
   // ─────────────────────────────────────────────────────────────
   // AUTH
@@ -83,6 +82,15 @@ const routes: RouteRecordRaw[] = [
         name: 'Aktivitäten',
         component: () => import('@/views/admin/Logs.vue'),
       },
+      {
+        path: '/admin/import',
+        name: 'calendar-import',
+        component: () => import('@/views/admin/Calendarimport.vue'),
+        beforeEnter: () => {
+          if (import.meta.env.VITE_TERMIN_IMPORT !== 'true') return '/dashboard';
+        },
+        meta: { requiresAuth: true /* + eure roles-meta, falls vorhanden */ },
+      }
     ],
   },
 
