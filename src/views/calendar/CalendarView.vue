@@ -130,6 +130,31 @@ async function handleSave(payload: any) {
           break;
       }
 
+    } else if (Array.isArray(payload)) {
+
+      // Benutzerdefinierte Termine: mehrere Einzeltermine auf einmal anlegen.
+      // Jeder Termin ist ein eigenständiges Event (kein Backend-Series-Objekt).
+      const results = await Promise.allSettled(
+        payload.map((p) => createEvent(p)),
+      );
+
+      const failed = results.filter((r) => r.status === 'rejected');
+
+      // Kalender aktualisieren, auch wenn nur ein Teil der Termine geklappt hat
+      calendarRef.value
+        ?.getApi()
+        ?.refetchEvents();
+
+      if (failed.length > 0) {
+        modalError.value =
+          `${failed.length} von ${payload.length} Terminen konnten nicht angelegt werden ` +
+          '(z. B. wegen Raumkonflikt an einem der Tage).';
+        return; // Modal offen lassen, damit die Fehlermeldung sichtbar bleibt
+      }
+
+      closeModal();
+      return;
+
     } else {
 
       if (!isEditing.value && payload.isSeries) { 
