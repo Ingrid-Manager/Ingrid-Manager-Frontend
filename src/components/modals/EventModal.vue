@@ -294,7 +294,7 @@ function handleDelete() {
                   <option value="WEEKLY">Wöchentlich</option>
                   <option value="BIWEEKLY">Zweiwöchentlich</option>
                 </CFormSelect>
-                  <CFormCheck v-model="form.runDuringSchoolHolidays" label="Termine finden während der Ferien statt?"></CFormCheck>
+                  <CFormCheck v-model="form.runDuringSchoolHolidays" label="Termine finden auch während der Ferien statt."></CFormCheck>
             </CCardBody>
           </CCard>
         </CCollapse>
