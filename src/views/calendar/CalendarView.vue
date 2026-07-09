@@ -46,12 +46,15 @@ const rooms = ref<RoomNames[]>([]);
 const modalError = ref('');
 // Checked-State je Raum-ID – bereit für spätere Filterlogik
 const roomChecked = ref<Record<number, boolean>>({});
-
+const hiddenRoomIds = String(import.meta.env.VITE_HIDDEN_ROOM_IDS ?? '')
+  .split(';')
+  .filter((id: string) => id.length > 0)
+  .map(Number);
 onMounted(async () => {
   try {
     rooms.value = await getRoomNames()
     rooms.value.forEach((room) => {
-      roomChecked.value[room.id] = true
+      roomChecked.value[room.id] = !hiddenRoomIds.includes(room.id)
     })
   } catch (err) {
     console.error('Fehler beim Laden der Räume:', err)
@@ -279,6 +282,9 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     },
   },
   eventClick: (info: EventClickArg) => {
+  if (isGuest.value) {
+    return; // Gäste dürfen das Modal nicht öffnen
+  }
     if (info.event.extendedProps.seriesId) {
       selectedEvent.value = {
         id: info.event.id,
