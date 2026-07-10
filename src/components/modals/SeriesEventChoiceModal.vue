@@ -29,7 +29,7 @@ const emit = defineEmits<{
       </p>
 
       <p>
-        Was möchten Sie bearbeiten?
+        Was möchtest du bearbeiten?
       </p>
     </CModalBody>
 

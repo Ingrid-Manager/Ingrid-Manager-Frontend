@@ -327,11 +327,12 @@ function handleDelete() {
           </CCol>
         </CRow>
         <!-- Serie -->
-        <CRow class="mb-3">
-          <CCol>
-            <CFormCheck v-model="form.isSeries" label="Termin ist Teil einer Serie" :disabled="!canEdit"/>
-          </CCol>
-        </CRow>
+<!-- Serie: im Bearbeiten-Modus nur anzeigen, wenn der Termin tatsächlich Teil einer Serie ist -->
+<CRow class="mb-3" v-if="!isEditing || form.isSeries">
+  <CCol>
+    <CFormCheck v-model="form.isSeries" label="Termin ist Teil einer Serie" :disabled="!canEdit"/>
+  </CCol>
+</CRow>
 
         <CCollapse :visible="showSeriesOptions">
           <CCard class="mb-3 series-options-card">
@@ -347,7 +348,7 @@ function handleDelete() {
                   </CCol>
 
                   <CCol md="6">
-                    <CFormLabel>Wiederholungen</CFormLabel>
+                    <CFormLabel>Wiederholung</CFormLabel>
                     <CFormSelect v-model="form.frequency" :disabled="!canEdit">
                       <option value="WEEKLY">Wöchentlich</option>
                       <option value="BIWEEKLY">Zweiwöchentlich</option>
@@ -364,11 +365,12 @@ function handleDelete() {
                 <hr class="series-divider" />
               </div>
 
-              <CFormCheck
-                v-model="form.customSeries"
-                label="Benutzerdefiniert (feste Einzeltermine statt Wiederholungsmuster)"
-                :disabled="!canEdit"
-              />
+<CFormCheck
+  v-if="!isEditing"
+  v-model="form.customSeries"
+  label="Benutzerdefiniert (feste Einzeltermine statt Wiederholungsmuster)"
+  :disabled="!canEdit"
+/>
             </CCardBody>
           </CCard>
         </CCollapse>
@@ -414,7 +416,7 @@ function handleDelete() {
 
               <CFormLabel>Mehrere Termine per Text einfügen</CFormLabel>
               <div class="series-hint">
-                Ein Datum pro Zeile oder durch Komma/Semikolon getrennt, Format TT.MM.JJJJ (z. B. 12.08.2026 oder 5.8.26)
+                Ein Datum pro Zeile oder durch Komma/Semikolon getrennt, Format (z. B. 12.08.2026 oder 5.8.26)
               </div>
 
               <CFormTextarea v-model="datesText" rows="3" :disabled="!canEdit" />
