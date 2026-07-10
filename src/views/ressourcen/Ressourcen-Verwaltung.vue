@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
-import { cilPlus, cilPencil, cilTrash, cilSave } from '@coreui/icons';
+import { cilPlus, cilPencil, cilSave } from '@coreui/icons';
 import {
   CCard,
   CCardHeader,
@@ -27,7 +27,6 @@ import CIcon from '@coreui/icons-vue';
 import { getResource } from '@/api/getResource';
 import { createResource } from '@/api/createResource';
 import { updateResource } from '@/api/updateResource';
-import { deleteResource } from '@/api/deleteResource';
 import type { ResourceNames } from '@/helper/interfaces/resource/ResourceNames';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -51,10 +50,12 @@ const errorMessage = ref('');
 
 const modalVisible = ref(false);
 const isEditMode = ref(false);
-const deleteModalVisible = ref(false);
-const resourceToDelete = ref<ResourceNames | null>(null);
 const nameError = ref(false);
 const saving = ref(false);
+
+const emailError = ref(false);
+// E-Mail-Formatprüfung
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const form = reactive({
   id: 0,
@@ -128,6 +129,15 @@ async function submitForm() {
     return;
   }
   nameError.value = false;
+
+  // Manager-E-Mail ist optional, muss aber – falls ausgefüllt – ein gültiges Format haben
+  const trimmedEmail = form.manager_email.trim();
+  if (trimmedEmail && !emailPattern.test(trimmedEmail)) {
+    emailError.value = true;
+    return;
+  }
+  emailError.value = false;
+
   saving.value = true;
   errorMessage.value = '';
 
@@ -135,7 +145,7 @@ async function submitForm() {
     const payload = {
       title: form.title.trim(),
       color: form.color,
-      manager_email: form.manager_email || undefined,
+      manager_email: trimmedEmail || undefined,
       inventoryid: form.inventoryid || undefined,
     };
 
@@ -155,26 +165,6 @@ async function submitForm() {
   }
 }
 
-// ─── Löschen ──────────────────────────────────────────────────────────────────
-function confirmDelete(resource: ResourceNames) {
-  resourceToDelete.value = resource;
-  deleteModalVisible.value = true;
-}
-
-async function DeleteResource() {
-  if (!resourceToDelete.value) return;
-  errorMessage.value = '';
-  try {
-    await deleteResource(resourceToDelete.value.id);
-    await loadResources();
-  } catch (err) {
-    console.error('Fehler beim Löschen:', err);
-    errorMessage.value = 'Resource konnte nicht gelöscht werden.';
-  } finally {
-    deleteModalVisible.value = false;
-    resourceToDelete.value = null;
-  }
-}
 </script>
 
 <template>
@@ -201,9 +191,9 @@ async function DeleteResource() {
                 <CTableRow>
                   <CTableHeaderCell>Farbe</CTableHeaderCell>
                   <CTableHeaderCell>Bezeichnung</CTableHeaderCell>
-                  <CTableHeaderCell>Inventar-ID</CTableHeaderCell>
-                  <CTableHeaderCell>Manager E-Mail</CTableHeaderCell>
-                  <CTableHeaderCell class="text-end">Aktionen</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell">Inventar-ID</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell">Manager E-Mail</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell">Aktionen</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
@@ -228,32 +218,22 @@ async function DeleteResource() {
                       />
                     </CTableDataCell>
                     <CTableDataCell>{{ resource.title }}</CTableDataCell>
-                    <CTableDataCell>
+                    <CTableDataCell class="d-none d-md-table-cell">
                       <CBadge color="secondary" shape="rounded-pill">
-                        {{ resource.inventoryid || '—' }}
+                      {{ resource.inventoryid || '—' }}
                       </CBadge>
                     </CTableDataCell>
-                    <CTableDataCell>
+                    <CTableDataCell class="d-none d-md-table-cell">
                       {{ resource.manager_email || '—' }}
                     </CTableDataCell>
                     <CTableDataCell class="text-end">
                       <CButton
-                        color="secondary"
-                        size="sm"
-                        class="me-2"
-                        @click="openEditModal(resource)"
-                      >
-                        <CIcon :icon="cilPencil" class="me-1" />
-                        Bearbeiten
-                      </CButton>
-                      <CButton
-                        color="danger"
-                        size="sm"
-                        variant="outline"
-                        @click="confirmDelete(resource)"
-                      >
-                        <CIcon :icon="cilTrash" class="me-1" />
-                        Löschen
+                          color="primary"
+                          size="sm"
+                          @click="openEditModal(resource)"
+                          >
+                          <CIcon :icon="cilPencil" class="me-md-1" />
+                          <span class="d-none d-md-inline">Bearbeiten</span>
                       </CButton>
                     </CTableDataCell>
                   </CTableRow>
@@ -322,11 +302,13 @@ async function DeleteResource() {
         <div class="mb-3">
           <CFormLabel for="resmail">Manager E-Mail</CFormLabel>
           <CFormInput
-            id="resmail"
+           id="resmail"
             v-model="form.manager_email"
-            type="email"
-            placeholder="Standardmäßig die Org. Mailadresse"
-          />
+           type="email"
+           :invalid="emailError"
+             placeholder="Standardmäßig die Org. Mailadresse"
+              />
+<CFormFeedback invalid>Bitte eine gültige E-Mail-Adresse eingeben.</CFormFeedback>
           <div class="form-text text-muted">
             Mailadresse zur Info/Bestätigung
           </div>
@@ -353,35 +335,6 @@ async function DeleteResource() {
         <CButton color="primary" :disabled="saving" @click="submitForm">
           <CIcon :icon="cilSave" class="me-2" />
           {{ saving ? 'Wird gespeichert…' : 'Speichern' }}
-        </CButton>
-      </CModalFooter>
-    </CModal>
-
-    <!-- ── Löschen Bestätigungsdialog ─────────────────────────────────────── -->
-    <CModal
-      :visible="deleteModalVisible"
-      alignment="center"
-      size="sm"
-      @close="deleteModalVisible = false"
-    >
-      <CModalHeader>
-        <CModalTitle>Resource löschen</CModalTitle>
-      </CModalHeader>
-      <CModalBody>
-        Möchtest du <strong>{{ resourceToDelete?.title }}</strong> wirklich
-        löschen? Diese Aktion kann nicht rückgängig gemacht werden.
-      </CModalBody>
-      <CModalFooter>
-        <CButton
-          color="secondary"
-          variant="outline"
-          @click="deleteModalVisible = false"
-        >
-          Abbrechen
-        </CButton>
-        <CButton color="danger" @click="DeleteResource">
-          <CIcon :icon="cilTrash" class="me-2" />
-          Löschen
         </CButton>
       </CModalFooter>
     </CModal>

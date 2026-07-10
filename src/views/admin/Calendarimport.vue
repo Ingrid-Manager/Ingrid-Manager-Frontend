@@ -633,7 +633,8 @@ async function runImport(pending: PendingImport) {
     <div class="w-100" style="max-width: 1200px">
       <h1 class="h4 mb-1">Kalender-Import aus Excel</h1>
       <p class="text-medium-emphasis mb-4">
-        Lädt Termine aus einer .xlsx-Datei (Spalten: <em>Titel, Datum, Uhrzeit, Veranstaltungsort, Beschreibung</em>) direkt in den Kalender.
+        Lädt Termine aus einer .xlsx-Datei (Spalten: <em>Titel, Datum, Uhrzeit, Veranstaltungsort, Beschreibung</em>) direkt in den Kalender.<br>
+        Dies ist komplett abgestimmt auf die Datei für den Termin-Import bei <a href="https://www.termine-e.de" target="_blank" rel="noopener noreferrer">www.termine-e.de</a>.
       </p>
 
       <!-- Ladeindikator (Räume) -->

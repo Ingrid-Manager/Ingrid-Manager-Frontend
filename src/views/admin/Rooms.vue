@@ -4,6 +4,8 @@ import RoomModal from '@/components/modals/RoomModal.vue';
 import type { RoomPayload } from '@/components/modals/RoomModal.vue';
 import { getRooms, createRoom } from '@/api/rooms.api';
 import type { Room } from '@/helper/interfaces/room/Room';
+import { cilPencil } from '@coreui/icons';
+import CIcon from '@coreui/icons-vue';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const rooms = ref<Room[]>([]);
@@ -178,9 +180,9 @@ function roomStatusColor(room: Room): string {
                   <CTableHeaderCell>Farbe</CTableHeaderCell>
                   <CTableHeaderCell>Raum</CTableHeaderCell>
                   <CTableHeaderCell>Status</CTableHeaderCell>
-                  <CTableHeaderCell>Temperaturen</CTableHeaderCell>
-                  <CTableHeaderCell>Vorlaufzeit</CTableHeaderCell>
-                  <CTableHeaderCell>Fritz!Box-ID</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell">Temperaturen</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell">Vorlaufzeit</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell">Fritz!Box-ID</CTableHeaderCell>
                   <CTableHeaderCell></CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
@@ -211,7 +213,7 @@ function roomStatusColor(room: Room): string {
                   </CTableDataCell>
 
                   <!-- Temperaturen -->
-                  <CTableDataCell class="small">
+                  <CTableDataCell class="small d-none d-md-table-cell">
                     <span class="text-nowrap">
                       Komfort: {{ room.comfort_temp ?? '—' }}°C
                     </span>
@@ -222,20 +224,22 @@ function roomStatusColor(room: Room): string {
                   </CTableDataCell>
 
                   <!-- Vorlaufzeit -->
-                  <CTableDataCell class="small">
+                  <CTableDataCell class="small d-none d-md-table-cell">
                     {{ room.prelim_time != null ? `${room.prelim_time} Min.` : '—' }}
                   </CTableDataCell>
 
                   <!-- Fritz!Box-ID -->
-                  <CTableDataCell class="small text-medium-emphasis">
+                  <CTableDataCell class="small text-medium-emphasis d-none d-md-table-cell">
                     {{ room.avm_id || '—' }}
                   </CTableDataCell>
 
                   <!-- Aktionen -->
+                  <!-- Aktionen -->
                   <CTableDataCell class="text-end">
-                    <CButton color="primary" size="sm" @click="openEdit(room)">
-                      Bearbeiten
-                    </CButton>
+                  <CButton color="primary" size="sm" @click="openEdit(room)">
+                  <CIcon :icon="cilPencil" class="me-md-1" />
+                  <span class="d-none d-md-inline">Bearbeiten</span>
+                  </CButton>
                   </CTableDataCell>
                 </CTableRow>
               </CTableBody>

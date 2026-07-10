@@ -310,4 +310,14 @@
   .fc .fc-toolbar-title {
     font-size: 1.2rem;
   }
+.calendar-list-event-description {
+  font-size: 0.8rem;
+  color: var(--cui-secondary-color, #6b7785);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  margin-top: 2px;
+}
+
+
+ //final close 
 }

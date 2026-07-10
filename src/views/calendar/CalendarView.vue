@@ -447,6 +447,26 @@ headerToolbar: isMobile.value
     }
   },
 
+// ─── Listen-Ansicht: Titel + Beschreibung anzeigen (nicht für Gäste) ──────
+eventContent: (arg) => {
+  // In allen anderen Ansichten (Monat, Woche) Standard-Rendering beibehalten
+  if (!arg.view.type.startsWith('list')) {
+    return true;
+  }
+
+  const description = isGuest.value
+    ? ''
+    : (arg.event.extendedProps.description || '');
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'fc-event-title fc-sticky';
+  titleEl.textContent = description
+    ? `${arg.event.title} | ${description}`
+    : arg.event.title;
+
+  return { domNodes: [titleEl] };
+},
+
   eventMouseEnter: (info) => {
 
   // Für Hintergrund-Events (z. B. Ferien) keinen Tooltip anzeigen

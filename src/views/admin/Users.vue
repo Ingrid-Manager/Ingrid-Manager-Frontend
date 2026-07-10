@@ -208,10 +208,10 @@ function onResetPassword() {
                 <CTableRow>
 
                   <CTableHeaderCell>Name</CTableHeaderCell>
-                  <CTableHeaderCell>Email</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell">Email</CTableHeaderCell>
                   <CTableHeaderCell>Status</CTableHeaderCell>
-                  <CTableHeaderCell>Berechtigungen</CTableHeaderCell>
-                  <CTableHeaderCell class="text-end">Aktionen</CTableHeaderCell>
+                  <CTableHeaderCell><span class="d-md-none">Rolle</span><span class="d-none d-md-inline">Berechtigungen</span></CTableHeaderCell>
+                  <CTableHeaderCell class="text-end"><span class="d-none d-md-inline">Aktionen</span></CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
 
@@ -222,7 +222,7 @@ function onResetPassword() {
                     >{{ user.firstName }} {{ user.lastName }}</CTableDataCell
                   >
 
-                  <CTableDataCell>{{ user.email }}</CTableDataCell>
+                  <CTableDataCell class="d-none d-md-table-cell">{{ user.email }}</CTableDataCell>
 
                   <CTableDataCell>
                     <CBadge :color="statusColor(user.status)">
@@ -253,15 +253,15 @@ function onResetPassword() {
                   </CTableDataCell>
 
                   <CTableDataCell class="text-end">
-              <CButton
-               color="primary"
-              size="sm"
-              :disabled="isSelf(user)"
-              @click="openEditModal(user)"
->
-                      <CIcon :icon="cilPencil" class="me-1" />
-                      Bearbeiten
-                    </CButton>
+                  <CButton
+                  color="primary"
+                  size="sm"
+                  :disabled="isSelf(user)"
+                  @click="openEditModal(user)"
+                  >
+                  <CIcon :icon="cilPencil" class="me-md-1" />
+                  <span class="d-none d-md-inline">Bearbeiten</span>
+                  </CButton>
                   </CTableDataCell>
                 </CTableRow>
               </CTableBody>
