@@ -18,9 +18,11 @@ body {
 
 .header > .container-fluid,
 .sidebar-header {
-  min-height: calc(
-    4rem + 1px
-  ); // stylelint-disable-line function-disallowed-list
+  min-height: calc(2.75rem + 1px); // statt 4rem
+}
+
+.sidebar-header .nav-link {
+  min-height: calc(2.75rem + 1px);
 }
 
 .sidebar-brand-full {

@@ -8,7 +8,8 @@ import type { Ref } from 'vue';
 const router = useRouter();
 const route = useRoute();
 const auth = useAuthStore();
-const headerClassNames = ref<string>('mb-4 p-0');
+const headerClassNames = ref<string>('mb-2 p-0');
+  //TODO: Vorher: 'mb-4 p-0' Dadurch der Abstand zwischen Navbar und App-content größer
 const isGuest = computed(() => auth.user?.role?.name === 'guest');
 const canAccessAdmin = computed(() => auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',);
 const showTerminImport = computed(() => import.meta.env.VITE_TERMIN_IMPORT === 'true');
