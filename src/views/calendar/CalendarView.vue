@@ -306,11 +306,14 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       click: () => openModal(),
     },
   },
-  eventClick: (info: EventClickArg) => {
+eventClick: (info: EventClickArg) => {
   if (isGuest.value) {
     return; // Gäste dürfen das Modal nicht öffnen
   }
-    if (info.event.extendedProps.seriesId) {
+  if (info.event.display === 'background') {
+    return; // Hintergrund-Events (z. B. Ferien) sind nicht bearbeitbar
+  }
+  if (info.event.extendedProps.seriesId) {
       selectedEvent.value = {
         id: info.event.id,
         title: info.event.title,
@@ -446,7 +449,12 @@ headerToolbar: isMobile.value
 
   eventMouseEnter: (info) => {
 
-    const userName = info.event.extendedProps.userName || '';
+  // Für Hintergrund-Events (z. B. Ferien) keinen Tooltip anzeigen
+  if (info.event.display === 'background') {
+    return;
+  }
+
+  const userName = info.event.extendedProps.userName || '';
 
     const start =
       info.event.start
