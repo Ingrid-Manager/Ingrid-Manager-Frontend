@@ -98,7 +98,7 @@ function onStartChange() {
   if (!start) return;
 
   const nextDay = new Date(start);
-  nextDay.setDate(nextDay.getDate() + 1);
+  nextDay.setDate(nextDay.getDate() + 2);
   const nextDayStr = nextDay.toISOString().slice(0, 10);
 
   const currentEnd = form.value['create-ressource-modal-end'];

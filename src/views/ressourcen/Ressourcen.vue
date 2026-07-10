@@ -57,6 +57,10 @@ const windowWidth = ref(window.innerWidth);
 const windowHeight = ref(window.innerHeight);
 const isMobile = computed(() => windowWidth.value < 900);
 
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+const tooltip = ref<HTMLElement | null>(null);
+
+
 function onResize() {
   windowWidth.value = window.innerWidth;
   windowHeight.value = window.innerHeight;
@@ -195,6 +199,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   selectMirror: false,
   editable: false,
   dayMaxEvents: true,
+  displayEventTime: false,
 
   // ─── Events aus API laden ──────────────────────────────────────────────────
   events: async (fetchInfo: EventSourceFuncArg) => {
@@ -203,19 +208,24 @@ const calendarOptions = computed<CalendarOptions>(() => ({
         fetchInfo.startStr,
         fetchInfo.endStr,
       );
-      return events.map((e) => ({
-        id: String(e.id),
-        title: e.title,
-        start: e.start,
-        end: e.end,
-        color: e.color,
-        extendedProps: {
-          resourceId: e.resource_id,
-          resourceTitle: e.resource_title,
-          userId: e.user_id,
-          userName: e.user_name,
-        },
-      }));
+return events.map((e) => ({
+  id: String(e.id),
+  // Anzeige im Kalender: Ressourcen-Name + Beschreibung
+  title: e.resource_title
+    ? `${e.resource_title}: ${e.title}`
+    : e.title,
+  start: e.start,
+  end: e.end,
+  color: e.color,
+  extendedProps: {
+    resourceId: e.resource_id,
+    resourceTitle: e.resource_title,
+    userId: e.user_id,
+    userName: e.user_name,
+    // Ursprünglicher Titel/Beschreibung ohne Ressourcen-Name (für Bearbeiten-Modus)
+    rawTitle: e.title,
+  },
+}));
     } catch (err) {
       console.error('Fehler beim Laden der Events:', err);
       return [];
@@ -226,7 +236,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   eventClick: (info: EventClickArg) => {
     selectedEvent.value = {
       id: info.event.id,
-      title: info.event.title,
+      title: info.event.extendedProps.rawTitle ?? info.event.title,
       start: info.event.start?.toISOString() || '',
       end: info.event.end?.toISOString() || '',
       color: info.event.backgroundColor,
@@ -255,7 +265,72 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
     setTimeout(() => modalRef.value?.prefillDates(start, end), 0);
   },
+// ─── Tooltip beim Hover anzeigen ───────────────────────────────────────────
+eventMouseEnter: (info) => {
+  const rawTitle = info.event.extendedProps.rawTitle || info.event.title;
+  const resourceTitle = info.event.extendedProps.resourceTitle || '';
+  const userName = info.event.extendedProps.userName || '';
+
+
+  const formatDate = (d: Date | null) =>
+    d ? d.toLocaleDateString('de-DE') : '';
+
+  const start = formatDate(info.event.start);
+
+  let endDisplay = '';
+  if (info.event.end) {
+    const end = new Date(info.event.end);
+    end.setDate(end.getDate() - 1);
+    endDisplay = formatDate(end);
+  }
+
+  const el = document.createElement('div');
+
+  el.className = 'calendar-tooltip';
+
+  const tooltipHtml = `
+  <div class="calendar-tooltip-title">
+    ${rawTitle}
+  </div>
+
+  <div class="calendar-tooltip-row">
+    <strong>Ressource:</strong>
+    ${resourceTitle}
+  </div>
+
+  <div class="calendar-tooltip-row">
+    <strong>Datum:</strong>
+    ${endDisplay && endDisplay !== start ? `${start} - ${endDisplay}` : start}
+  </div>
+
+  ${userName ? `
+  <div class="calendar-tooltip-row">
+    <strong>Erstellt von:</strong>
+    ${userName}
+  </div>` : ''}
+`;
+
+  el.innerHTML = tooltipHtml;
+
+  document.body.appendChild(el);
+
+  const rect = info.el.getBoundingClientRect();
+
+  el.style.top = `${rect.bottom + 8}px`;
+  el.style.left = `${rect.left}px`;
+
+  tooltip.value = el;
+},
+
+eventMouseLeave: () => {
+  if (tooltip.value) {
+    tooltip.value.remove();
+    tooltip.value = null;
+  }
+},
 }));
+
+//Tooltip Inner HTML
 </script>
 
 <template>
