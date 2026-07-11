@@ -10,5 +10,6 @@ export interface Room {
   heated: boolean;
   color: string;
   hidden: boolean;
-  location: Location;
+  locationid: number;
+  location?: Location;
 }

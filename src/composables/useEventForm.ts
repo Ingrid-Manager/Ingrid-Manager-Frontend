@@ -127,6 +127,28 @@ export function useEventForm() {
     },
   );
 
+  // Sobald die Benutzerdefiniert-Ansicht das erste Mal sichtbar wird, direkt
+  // eine leere Datumszeile anzeigen, statt dass der Nutzer erst auf
+  // "+ Datum" klicken muss.
+  watch(showCustomDates, (visible) => {
+    if (visible && customDates.value.length === 0) {
+      addDateRow();
+    }
+  });
+
+  // Immer eine leere Zeile am Ende bereithalten: sobald alle vorhandenen
+  // Zeilen ausgefüllt sind, automatisch eine weitere leere Zeile ergänzen.
+  watch(
+    customDates,
+    (rows) => {
+      const hasEmptyRow = rows.some((entry) => entry.value === '');
+      if (!hasEmptyRow) {
+        addDateRow();
+      }
+    },
+    { deep: true },
+  );
+
   function resetForm() {
     form.value = {
       title: '',

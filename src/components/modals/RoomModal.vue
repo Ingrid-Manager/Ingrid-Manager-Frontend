@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 
+import type { Location } from '@/helper/interfaces/location/location';
+
 type RoomStatus = 'free' | 'booked' | 'unknown';
 
 export interface RoomPayload {
@@ -13,10 +15,13 @@ export interface RoomPayload {
   time?: string;
   smarthomeid?: string;
   color?: string;
+  locationid?: number | null;
+  hidden?: boolean;
 }
 
 const props = defineProps<{
   visible: boolean;
+  locations?: Location[];
 }>();
 
 const emit = defineEmits<{
@@ -34,6 +39,8 @@ const form = ref<RoomPayload>({
   time: '',
   smarthomeid: '',
   color: '#000000',
+  locationid: null,
+  hidden: false,
 });
 
 const validated = ref(false);
@@ -79,6 +86,8 @@ function resetForm() {
     time: '',
     smarthomeid: '',
     color: '#000000',
+    locationid: null,
+    hidden: false,
   };
   validated.value = false;
 }
@@ -151,11 +160,38 @@ function resetForm() {
         </div>
 
         <div class="mb-3">
+          <CFormSelect
+            id="create-room-modal-locationid"
+            v-model.number="form.locationid"
+            label="Standort"
+            required
+            feedback-invalid="Bitte einen Standort auswählen."
+          >
+            <option :value="null" disabled>— auswählen —</option>
+            <option
+              v-for="location in props.locations ?? []"
+              :key="location.id"
+              :value="location.id"
+            >
+              {{ location.title }}
+            </option>
+          </CFormSelect>
+        </div>
+
+        <div class="mb-3">
           <CFormInput
             id="create-room-modal-color"
             v-model="form.color"
             type="color"
             label="Kalender Farbe"
+          />
+        </div>
+
+        <div class="mb-3">
+          <CFormCheck
+            id="create-room-modal-hidden"
+            v-model="form.hidden"
+            label="Raum im Kalender ausblenden"
           />
         </div>
       </CModalBody>

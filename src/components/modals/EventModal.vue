@@ -330,7 +330,7 @@ function handleDelete() {
 <!-- Serie: im Bearbeiten-Modus nur anzeigen, wenn der Termin tatsächlich Teil einer Serie ist -->
 <CRow class="mb-3" v-if="!isEditing || form.isSeries">
   <CCol>
-    <CFormCheck v-model="form.isSeries" label="Termin ist Teil einer Serie" :disabled="!canEdit"/>
+    <CFormCheck id="event-modal-isseries" v-model="form.isSeries" label="Termin ist Teil einer Serie" :disabled="!canEdit"/>
   </CCol>
 </CRow>
 
@@ -357,6 +357,7 @@ function handleDelete() {
                 </CRow>
 
                 <CFormCheck
+                  id="event-modal-run-during-holidays"
                   v-model="form.runDuringSchoolHolidays"
                   label="Termine finden auch während der Ferien statt"
                   :disabled="!canEdit"
@@ -365,12 +366,13 @@ function handleDelete() {
                 <hr class="series-divider" />
               </div>
 
-<CFormCheck
-  v-if="!isEditing"
-  v-model="form.customSeries"
-  label="Benutzerdefiniert (feste Einzeltermine statt Wiederholungsmuster)"
-  :disabled="!canEdit"
-/>
+            <CFormCheck
+            id="event-modal-custom-series"
+            v-if="!isEditing"
+            v-model="form.customSeries"
+            label="Benutzerdefiniert (feste Einzeltermine statt Wiederholungsmuster)"
+            :disabled="!canEdit"
+            />
             </CCardBody>
           </CCard>
         </CCollapse>

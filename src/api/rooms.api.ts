@@ -30,9 +30,7 @@ export async function createRoom(payload: CreateRoomPayload): Promise<Room> {
   return response.data;
 }
 
-// Hinweis: Das Backend hat noch keinen PATCH-Endpunkt für Räume.
-// Sobald dieser hinzugefügt wird, kann diese Funktion aktiviert werden:
-// export async function updateRoom(id: number, payload: UpdateRoomPayload): Promise<Room> {
-//   const response = await http.patch(`/rooms/${id}`, payload);
-//   return response.data;
-// }
+export async function updateRoom(id: number, payload: UpdateRoomPayload): Promise<Room> {
+  const response = await http.patch(`/rooms/${id}`, payload);
+  return response.data;
+}

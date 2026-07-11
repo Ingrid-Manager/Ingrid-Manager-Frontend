@@ -2,25 +2,32 @@
 import { ref, onMounted } from 'vue';
 import RoomModal from '@/components/modals/RoomModal.vue';
 import type { RoomPayload } from '@/components/modals/RoomModal.vue';
-import { getRooms, createRoom } from '@/api/rooms.api';
+import { getRooms, createRoom, updateRoom } from '@/api/rooms.api';
+import { getAvmLocations } from '@/api/avmLocations.api';
 import type { Room } from '@/helper/interfaces/room/Room';
+import type { Location } from '@/helper/interfaces/location/location';
 import { cilPencil } from '@coreui/icons';
 import CIcon from '@coreui/icons-vue';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const rooms = ref<Room[]>([]);
+const locations = ref<Location[]>([]);
 const loading = ref(false);
 const errorMessage = ref('');
 
 const showModal = ref(false);
 const modalRef = ref<InstanceType<typeof RoomModal> | null>(null);
 
+// Ferien Raum immer ausblenden
+const HIDDEN_ROOM_ID = 9999;
+
 // ─── Laden ────────────────────────────────────────────────────────────────────
 async function loadRooms() {
   loading.value = true;
   errorMessage.value = '';
   try {
-    rooms.value = await getRooms();
+    const result = await getRooms();
+    rooms.value = result.filter((room) => room.id !== HIDDEN_ROOM_ID);
   } catch (err) {
     console.error('Fehler beim Laden der Räume:', err);
     errorMessage.value = 'Räume konnten nicht geladen werden.';
@@ -29,8 +36,17 @@ async function loadRooms() {
   }
 }
 
+async function loadLocations() {
+  try {
+    locations.value = await getAvmLocations();
+  } catch (err) {
+    console.error('Fehler beim Laden der Standorte:', err);
+  }
+}
+
 onMounted(() => {
   loadRooms();
+  loadLocations();
 });
 
 // ─── Modal öffnen ─────────────────────────────────────────────────────────────
@@ -48,6 +64,8 @@ function openCreate() {
         time: '',
         smarthomeid: '',
         color: '#3788d8',
+        locationid: locations.value[0]?.id ?? null,
+        hidden: false,
       }),
     0,
   );
@@ -67,6 +85,8 @@ function openEdit(room: Room) {
         time: String(room.prelim_time ?? ''),
         smarthomeid: room.avm_id ?? '',
         color: room.color ?? '#3788d8',
+        locationid: room.locationid ?? room.location?.id ?? null,
+        hidden: room.hidden ?? false,
       }),
     0,
   );
@@ -82,41 +102,32 @@ async function onRoomSaved(payload: RoomPayload) {
 
   const isNew = payload.id === 0;
 
-  const apiPayload = {
+  const baseApiPayload = {
     title: payload.name,
     avm_id: payload.smarthomeid || undefined,
     comfort_temp: Number(payload.heatedtemperature),
     empty_temp: Number(payload.cooledtemperature),
     prelim_time: Number(payload.time),
-    heated: false,
     color: payload.color || '#3788d8',
-    hidden: false,
-    // locationid wird benötigt – sobald Locations über die API verfügbar sind,
-    // kann hier dynamisch gewählt werden. Standardwert: 1
-    locationid: 1,
+    locationid: payload.locationid ?? undefined,
+    hidden: payload.hidden ?? false,
   };
 
   try {
     if (isNew) {
-      const created = await createRoom(apiPayload);
+      const created = await createRoom({
+        ...baseApiPayload,
+        heated: false,
+      });
       rooms.value.push(created);
     } else {
-      // PATCH-Endpunkt ist im Backend noch nicht vorhanden.
-      // Sobald PATCH /rooms/:id implementiert ist, hier aufrufen:
-      // await updateRoom(payload.id, apiPayload);
-      // await loadRooms();
-      console.warn('Backend-PATCH für Räume noch nicht implementiert. Lokales Update als Fallback.');
+      // "heated" wird bewusst nicht mitgeschickt: Der Wert wird von der
+      // Heizungssteuerung/Automation gesetzt und soll beim Bearbeiten
+      // der Raumdaten nicht überschrieben werden.
+      const updated = await updateRoom(payload.id, baseApiPayload);
       const index = rooms.value.findIndex((r) => r.id === payload.id);
       if (index !== -1) {
-        rooms.value[index] = {
-          ...rooms.value[index],
-          title: payload.name,
-          avm_id: payload.smarthomeid || '',
-          comfort_temp: Number(payload.heatedtemperature),
-          empty_temp: Number(payload.cooledtemperature),
-          prelim_time: Number(payload.time),
-          color: payload.color || '#3788d8',
-        };
+        rooms.value[index] = updated;
       }
     }
   } catch (err: any) {
@@ -139,14 +150,14 @@ function roomStatusColor(room: Room): string {
 
 <template>
   <div class="flex-grow-1 d-flex flex-column align-items-center pt-3 pb-3">
-    <div class="w-100 d-flex flex-column flex-grow-1" style="max-width: 1200px">
+    <div class="w-100 d-flex flex-column" style="max-width: 1200px">
 
       <!-- Fehlermeldung -->
       <CAlert v-if="errorMessage" color="danger" class="mb-3" dismissible @close="errorMessage = ''">
         {{ errorMessage }}
       </CAlert>
 
-      <CCard class="flex-grow-1 d-flex flex-column overflow-hidden">
+      <CCard class="d-flex flex-column">
         <CCardHeader class="d-flex justify-content-between align-items-center">
           <strong>Raumverwaltung</strong>
           <CButton color="info" @click="openCreate">
@@ -154,7 +165,7 @@ function roomStatusColor(room: Room): string {
           </CButton>
         </CCardHeader>
 
-        <CCardBody class="flex-grow-1 d-flex flex-column p-0 overflow-hidden">
+        <CCardBody class="d-flex flex-column p-0">
           <!-- Ladezustand -->
           <div v-if="loading" class="d-flex justify-content-center align-items-center p-5">
             <CSpinner color="primary" />
@@ -173,7 +184,7 @@ function roomStatusColor(room: Room): string {
           </div>
 
           <!-- Tabelle -->
-          <div v-else class="flex-grow-1 overflow-auto">
+          <div v-else>
             <CTable hover class="mb-0">
               <CTableHead>
                 <CTableRow>
@@ -257,6 +268,7 @@ function roomStatusColor(room: Room): string {
     <RoomModal
       ref="modalRef"
       :visible="showModal"
+      :locations="locations"
       @close="closeModal"
       @saved="onRoomSaved"
     />
