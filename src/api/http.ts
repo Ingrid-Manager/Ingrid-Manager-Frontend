@@ -74,7 +74,7 @@ http.interceptors.response.use(
         return http(originalRequest);
       } catch (err) {
         localStorage.removeItem('access_token');
-        window.location.href = '/login';
+        window.location.href = '/auth/login';
         return Promise.reject(err);
       }
     }

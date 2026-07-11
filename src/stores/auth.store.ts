@@ -74,7 +74,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       this.isAuthenticated = false;
 
-      window.location.href = '/login';
+      window.location.href = '/auth/login';
     },
   },
 });
