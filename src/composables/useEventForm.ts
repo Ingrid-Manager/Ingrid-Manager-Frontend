@@ -130,17 +130,34 @@ export function useEventForm() {
   // Sobald die Benutzerdefiniert-Ansicht das erste Mal sichtbar wird, direkt
   // eine leere Datumszeile anzeigen, statt dass der Nutzer erst auf
   // "+ Datum" klicken muss.
-  watch(showCustomDates, (visible) => {
-    if (visible && customDates.value.length === 0) {
-      addDateRow();
+  // Wird explizit (synchron, direkt beim Checkbox-Klick) aufgerufen, statt
+  // reaktiv auf showCustomDates zu lauschen: so wird der Startdatum-Wert
+  // garantiert VOR jedem möglichen DOM-Update (Ausblenden der Datum-Felder)
+  // übernommen, unabhängig davon, ob der Datepicker beim Unmounten seinen
+  // eigenen v-model-Wert zurücksetzt.
+  function seedFirstCustomDate(startDateValue: string) {
+    if (customDates.value.length === 0) {
+      customDates.value.push({ id: nextId++, value: startDateValue || '' });
+    } else if (!customDates.value[0].value) {
+      // Falls schon eine (leere) erste Zeile existiert, deren Wert setzen,
+      // statt eine doppelte Zeile anzulegen.
+      customDates.value[0].value = startDateValue || '';
     }
-  });
+  }
 
   // Immer eine leere Zeile am Ende bereithalten: sobald alle vorhandenen
   // Zeilen ausgefüllt sind, automatisch eine weitere leere Zeile ergänzen.
+  //
+  // Wichtig: Nur aktiv, während die Liste auch sichtbar ist (showCustomDates).
+  // Sonst legt dieser Watcher auch direkt nach dem Leeren (customDates = [],
+  // z.B. beim Deaktivieren von "Benutzerdefiniert") sofort wieder eine leere
+  // Zeile an – dadurch war customDates beim nächsten Aktivieren fälschlich
+  // schon nicht mehr leer, und seedFirstCustomDate() hat nichts mehr befüllt.
   watch(
     customDates,
     (rows) => {
+      if (!showCustomDates.value) return;
+
       const hasEmptyRow = rows.some((entry) => entry.value === '');
       if (!hasEmptyRow) {
         addDateRow();
@@ -188,6 +205,7 @@ export function useEventForm() {
     addDateRow,
     removeDateRow,
     parseDatesFromText,
+    seedFirstCustomDate,
 
     resetForm,
   };

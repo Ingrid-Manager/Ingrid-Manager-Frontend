@@ -2,6 +2,9 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { getResourceNames } from '@/api/getResourceNames';
 import type { ResourceNames } from '@/helper/interfaces/resource/ResourceNames';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
+import { de } from 'date-fns/locale';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -273,32 +276,46 @@ function resetForm() {
             <CFormLabel for="create-ressource-modal-start">
               Startdatum
             </CFormLabel>
-            <CFormInput
+            <VueDatePicker
               id="create-ressource-modal-start"
               v-model="form['create-ressource-modal-start']"
-              type="date"
-              required
+              model-type="yyyy-MM-dd"
+              :start-date="new Date()"
+              :time-config="{ enableTimePicker: false }"
+              auto-apply
               :disabled="!canEdit"
-              :invalid="validated && !form['create-ressource-modal-start']"
-              @change="onStartChange"
+              placeholder="Datum wählen"
+              :locale="de"
+              :formats="{ input: 'dd.MM.yyyy' }"
+              six-weeks="center"
+              :input-attrs="{ state: validated && !form['create-ressource-modal-start'] ? false : undefined }"
+              @update:model-value="onStartChange"
             />
-            <CFormFeedback invalid>Pflichtfeld.</CFormFeedback>
+            <CFormFeedback invalid :class="{ 'd-block': validated && !form['create-ressource-modal-start'] }">
+              Pflichtfeld.
+            </CFormFeedback>
           </CCol>
 
           <CCol md="6">
             <CFormLabel for="create-ressource-modal-end">
               Enddatum
             </CFormLabel>
-            <CFormInput
+            <VueDatePicker
               id="create-ressource-modal-end"
               v-model="form['create-ressource-modal-end']"
-              type="date"
-              required
+              model-type="yyyy-MM-dd"
+              :start-date="new Date()"
+              :min-date="form['create-ressource-modal-start'] || undefined"
+              :time-config="{ enableTimePicker: false }"
+              auto-apply
               :disabled="!canEdit"
-              :min="form['create-ressource-modal-start'] || undefined"
-              :invalid="validated && endDateInvalid"
+              placeholder="Datum wählen"
+              :locale="de"
+              :formats="{ input: 'dd.MM.yyyy' }"
+              six-weeks="center"
+              :input-attrs="{ state: validated && endDateInvalid ? false : undefined }"
             />
-            <CFormFeedback invalid>
+            <CFormFeedback invalid :class="{ 'd-block': validated && endDateInvalid }">
               Das Enddatum darf nicht vor dem Startdatum liegen.
             </CFormFeedback>
           </CCol>

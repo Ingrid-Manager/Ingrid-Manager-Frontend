@@ -39,6 +39,7 @@ const {
   addDateRow,
   removeDateRow,
   parseDatesFromText,
+  seedFirstCustomDate,
   resetForm,
 } = useEventForm();
 
@@ -107,6 +108,13 @@ watch(
     immediate: true,
   },
 );
+
+function onCustomSeriesToggle(checked: boolean) {
+  if (checked) {
+    seedFirstCustomDate(form.value.startDate);
+  }
+  form.value.customSeries = checked;
+}
 
 // Startdatum → Enddatum vorausfüllen
 watch(() => form.value.startDate, (newDate) => {
@@ -326,18 +334,42 @@ function handleDelete() {
           </CCol>
         </CRow>
 
-        <!-- Datum -->
-        <CRow class="mb-3">
+        <!-- Datum: bei benutzerdefinierten Terminen ausgeblendet, da das Startdatum
+             dann direkt in die erste Zeile der Zusätzliche-Termine-Liste übernommen wird -->
+        <CRow class="mb-3" v-if="!form.customSeries">
           <CCol md="6">
             <CFormLabel>Startdatum</CFormLabel>
-            <CFormInput v-model="form.startDate" type="date" required :disabled="!canEdit"/>
+            <VueDatePicker
+              v-model="form.startDate"
+              model-type="yyyy-MM-dd"
+              :start-date="new Date()"
+              :time-config="{ enableTimePicker: false }"
+              auto-apply
+              :disabled="!canEdit"
+              placeholder="Datum wählen"
+              :locale="de"
+              :formats="{ input: 'dd.MM.yyyy' }"
+              six-weeks="center"
+            />
           </CCol>
 
           <CCol md="6">
             <CFormLabel>Enddatum</CFormLabel>
-            <CFormInput v-model="form.endDate" type="date" :min="form.startDate || undefined"
-              :invalid="validated && !!dateError" :disabled="!canEdit"/>
-            <CFormFeedback invalid>{{ dateError }}</CFormFeedback>
+            <VueDatePicker
+              v-model="form.endDate"
+              model-type="yyyy-MM-dd"
+              :start-date="new Date()"
+              :min-date="form.startDate || undefined"
+              :time-config="{ enableTimePicker: false }"
+              auto-apply
+              :disabled="!canEdit"
+              placeholder="Datum wählen"
+              :locale="de"
+              :formats="{ input: 'dd.MM.yyyy' }"
+              six-weeks="center"
+              :input-attrs="{ state: validated && !!dateError ? false : undefined }"
+            />
+            <CFormFeedback invalid :class="{ 'd-block': validated && !!dateError }">{{ dateError }}</CFormFeedback>
           </CCol>
         </CRow>
         <!-- Serie -->
@@ -357,7 +389,7 @@ function handleDelete() {
 
                 <CRow class="mb-3">
                   <CCol md="6">
-                    <CFormLabel>Wiederholen bis</CFormLabel>
+                    <CFormLabel>Wiederholen bis zum</CFormLabel>
                     <CFormInput v-model="form.endSeriesDate" type="date" :disabled="!canEdit" />
                   </CCol>
 
@@ -383,9 +415,10 @@ function handleDelete() {
             <CFormCheck
             id="event-modal-custom-series"
             v-if="!isEditing"
-            v-model="form.customSeries"
+            :model-value="form.customSeries"
             label="Benutzerdefiniert (feste Einzeltermine statt Wiederholungsmuster)"
             :disabled="!canEdit"
+            @update:model-value="onCustomSeriesToggle"
             />
             </CCardBody>
           </CCard>
@@ -395,26 +428,26 @@ function handleDelete() {
         <CCollapse :visible="showCustomDates">
           <CCard class="mb-3 series-options-card">
             <CCardBody>
-              <div class="series-section-label">Zusätzliche Termine</div>
+              <div class="series-section-label">Benutzerdefinierte Termine</div>
 
               <div
                 v-for="(entry, index) in customDates"
                 :key="entry.id"
                 class="d-flex align-items-center gap-2 mb-2"
               >
-<VueDatePicker
-  v-model="entry.value"
-  :start-date="startDateFor(index)"
-  model-type="yyyy-MM-dd"
-  :time-config="{ enableTimePicker: false }"
-  auto-apply
-  :disabled="!canEdit"
-  placeholder="Datum wählen"
-:locale="de"
-:formats="{ input: 'dd.MM.yyyy' }"
-six-weeks="center"
-  class="flex-grow-1"
-/>
+                <VueDatePicker
+                  v-model="entry.value"
+                  :start-date="startDateFor(index)"
+                  model-type="yyyy-MM-dd"
+                  :time-config="{ enableTimePicker: false }"
+                  auto-apply
+                  :disabled="!canEdit"
+                  placeholder="Datum wählen"
+                  :locale="de"
+                  :formats="{ input: 'dd.MM.yyyy' }"
+                  six-weeks="center"
+                  class="flex-grow-1"
+                />
 
                 <CButton
                   type="button"
