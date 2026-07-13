@@ -10,7 +10,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'save', payload: any): void
   (e: 'cancel'): void
-  (e: 'reset-password'): void
+  (e: 'reset-password', email: string): void
 }>();
 
 const form = ref({
@@ -99,6 +99,14 @@ const handleConfirmDelete = (): void => {
 
   emit('save', payload);
 };
+
+const handlePasswordReset = (): void => {
+  if (!props.user || !props.user.email) {
+    return;
+  }
+
+  emit('reset-password', props.user.email)
+}
 </script>
 
 <template>
@@ -180,7 +188,7 @@ const handleConfirmDelete = (): void => {
           id="edit-user-modal-btn-reset-password"
           size="sm"
           color="warning"
-          @click="emit('reset-password')"
+          @click="handlePasswordReset()"
         >
           Passwort zurücksetzen
         </CButton>

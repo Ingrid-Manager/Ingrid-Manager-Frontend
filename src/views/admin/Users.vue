@@ -22,6 +22,7 @@ import type {
 } from '@/helper/interfaces/user/UserListItem';
 
 import { useAuthStore } from '@/stores/auth.store';
+import { resetPassword } from '@/api/users/postForgotPassword';
 const auth = useAuthStore();
 
 function isSelf(user: UserListItem): boolean {
@@ -151,9 +152,7 @@ function onCancel() {
   targetUser.value = null;
 }
 
-async function onSave(
-  payload: any,
-) {
+async function onSave(payload: any) {
 
   if (!targetUser.value) {
     return;
@@ -183,11 +182,18 @@ function onDelete(user: UserListItem) {
   setRole(user, 'Blocked');
 }
 
-function onResetPassword() {
+async function onResetPassword(email: string) {
+  try {
+    await resetPassword({ email: email });
+    await loadUsers();
+    onCancel();
+  } catch (err) {
+    console.error(
+      'Fehler beim Zurücksetzten der E-Mail Adresse:',
+      err,
+    );
+  }
 
-  console.log(
-    'Reset Passwort aktuell noch nicht implementiert',
-  );
 }
 </script>
 
