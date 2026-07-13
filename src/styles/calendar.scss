@@ -250,7 +250,10 @@
   overflow: hidden;
   
 }
-
+.fc {
+  --fc-bg-event-color: var(--cui-gray-400, #6c757d);
+  --fc-bg-event-opacity: 0.3;
+}
 /* =============================================================================
    Mobile Layout (< 768px)
 ============================================================================= */
@@ -312,10 +315,17 @@
   }
 .calendar-list-event-description {
   font-size: 0.8rem;
-  color: var(--cui-secondary-color, #6b7785);
+  color: var(--cui-secondary-color, #04203f);
   white-space: normal;
   overflow-wrap: anywhere;
   margin-top: 2px;
+}
+/* Background-Events (z.B. Ferien/Feiertage) ohne eigene Farbe:
+   FullCalendar würde sonst sein Default-Grün (#8fdf82) verwenden.
+   Hier auf die App-Theme-Farbe umgestellt. */
+.fc {
+  --fc-bg-event-color: var(--cui-gray-400, #6c757d);
+  --fc-bg-event-opacity: 0.3;
 }
 
 

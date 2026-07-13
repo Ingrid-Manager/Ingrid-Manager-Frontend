@@ -8,6 +8,9 @@ import { useEventForm } from '@/composables/useEventForm';
 import { getRoomNames } from '@/api/getRoomNames';
 import { CCol, CForm, CFormCheck, CFormLabel, CFormTextarea } from '@coreui/vue';
 import { PrefillData } from '@/helper/interfaces/PrefillData';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
+import { de } from 'date-fns/locale';
 
 const props = defineProps<{
   visible: boolean;
@@ -134,6 +137,17 @@ const timeError = computed(() => {
   }
   return '';
 });
+
+// Liefert den Monat/Startpunkt, den der Datepicker einer "Zusätzliche Termine"-
+// Zeile beim Öffnen anzeigen soll: das Datum der vorherigen Zeile, falls
+// vorhanden – ohne dass dabei ein Datum in der aktuellen Zeile vorausgewählt wird.
+function startDateFor(index: number): Date | undefined {
+  const previous = customDates.value[index - 1];
+  if (!previous || !previous.value) {
+    return undefined;
+  }
+  return new Date(previous.value);
+}
 
 function closeModal() {
   emit('close');
@@ -384,11 +398,23 @@ function handleDelete() {
               <div class="series-section-label">Zusätzliche Termine</div>
 
               <div
-                v-for="entry in customDates"
+                v-for="(entry, index) in customDates"
                 :key="entry.id"
                 class="d-flex align-items-center gap-2 mb-2"
               >
-                <CFormInput v-model="entry.value" type="date" :disabled="!canEdit" />
+<VueDatePicker
+  v-model="entry.value"
+  :start-date="startDateFor(index)"
+  model-type="yyyy-MM-dd"
+  :time-config="{ enableTimePicker: false }"
+  auto-apply
+  :disabled="!canEdit"
+  placeholder="Datum wählen"
+:locale="de"
+:formats="{ input: 'dd.MM.yyyy' }"
+six-weeks="center"
+  class="flex-grow-1"
+/>
 
                 <CButton
                   type="button"
