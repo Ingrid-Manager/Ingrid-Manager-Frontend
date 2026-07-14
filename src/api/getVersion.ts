@@ -4,8 +4,7 @@ interface VersionResponse {
   version: string;
 }
 
-// TODO: Pfad noch an den tatsächlichen Backend-Endpunkt anpassen
 export async function getBackendVersion(): Promise<string> {
-  const response = await http.get<VersionResponse>('/version');
+  const response = await http.get<VersionResponse>('/settings/version');
   return response.data.version;
 }
