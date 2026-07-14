@@ -1,6 +1,6 @@
 {
   "name": "@ingrid-manager/dev_ingridmanagerfrontend",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Frontend for the Ingrid Manager Backend",
   "bugs": {
     "url": "https://github.com/Ingrid-Manager/DEV_IngridManagerFrontend/issues"
@@ -9,7 +9,7 @@
     "type": "git",
     "url": "git@github.com:Ingrid-Manager/DEV_IngridManagerFrontend.git"
   },
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "author": "IngridManager Team (https://github.com/Ingrid-Manager)",
   "scripts": {
     "dev": "vite --force",

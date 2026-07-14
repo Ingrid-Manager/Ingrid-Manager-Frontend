@@ -2,11 +2,15 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'node:path';
 import autoprefixer from 'autoprefixer';
+import pkg from './package.json';
 
 export default defineConfig(() => {
   return {
     plugins: [vue()],
     base: '/',
+    define: {
+      __APP_VERSION__: JSON.stringify(pkg.version),
+    },
     css: {
       postcss: {
         plugins: [autoprefixer({})],

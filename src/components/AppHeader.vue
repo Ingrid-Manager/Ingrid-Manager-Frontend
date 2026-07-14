@@ -3,11 +3,14 @@ import { onMounted, ref, computed } from 'vue';
 import { useColorModes } from '@coreui/vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
+import { useVersionStore } from '@/stores/version.store';
 import type { Ref } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
 const auth = useAuthStore();
+const versionStore = useVersionStore();
+const frontendVersion = __APP_VERSION__;
 const headerClassNames = ref<string>('mb-2 p-0');
   //TODO: Vorher: 'mb-4 p-0' Dadurch der Abstand zwischen Navbar und App-content größer
 const isGuest = computed(() => auth.user?.role?.name === 'guest');
@@ -40,6 +43,8 @@ onMounted(() => {
         ? 'mb-4 p-0 shadow-sm'
         : 'mb-4 p-0';
   });
+
+  versionStore.fetchBackendVersion();
 });
 
 
@@ -164,6 +169,14 @@ onMounted(() => {
             <CDropdownDivider />
             <CDropdownItem @click="handleLogout">
               <CIcon icon="cil-lock-locked" /> Abmelden
+            </CDropdownItem>
+            <CDropdownDivider />
+            <CDropdownItem
+              disabled
+              class="text-body-secondary small py-1"
+            >
+              Frontend: v{{ frontendVersion }}<br />
+              Backend: v{{ versionStore.backendVersion ?? '…' }}
             </CDropdownItem>
           </CDropdownMenu>
         </CDropdown>
