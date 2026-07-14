@@ -1,25 +1,15 @@
 <script setup lang="ts">
-import {
-  ref,
-  onMounted,
-} from 'vue';
+import { ref, onMounted } from 'vue';
 
-import {
-  cilPencil,
-} from '@coreui/icons';
+import { cilPencil } from '@coreui/icons';
 
-import EditUserModal
-  from '@/components/modals/EditUserModal.vue';
+import EditUserModal from '@/components/modals/EditUserModal.vue';
 
-import { getUsers }
-  from '@/api/users/getUsers';
+import { getUsers } from '@/api/users/getUsers';
 
-import { updateUser }
-  from '@/api/users/updateUser';
+import { updateUser } from '@/api/users/updateUser';
 
-import type {
-  UserListItem,
-} from '@/helper/interfaces/user/UserListItem';
+import type { UserListItem } from '@/helper/interfaces/user/UserListItem';
 
 import { useAuthStore } from '@/stores/auth.store';
 import { resetPassword } from '@/api/users/postForgotPassword';
@@ -29,35 +19,24 @@ function isSelf(user: UserListItem): boolean {
   return auth.user?.id === user.id;
 }
 
-const users =
-  ref<UserListItem[]>([]);
+const users = ref<UserListItem[]>([]);
 
-const editModalVisible =
-  ref(false);
+const editModalVisible = ref(false);
 
-const targetUser =
-  ref<UserListItem | null>(null);
+const targetUser = ref<UserListItem | null>(null);
 
 const roleMap: Record<string, number> = {
   admin: 1,
   user: 2,
   verwaltung: 3,
-  guest: 4
-}
+  guest: 4,
+};
 
 async function loadUsers() {
-
   try {
-
-    users.value =
-      await getUsers();
-
+    users.value = await getUsers();
   } catch (err) {
-
-    console.error(
-      'Fehler beim Laden der Benutzer:',
-      err,
-    );
+    console.error('Fehler beim Laden der Benutzer:', err);
   }
 }
 
@@ -65,17 +44,8 @@ onMounted(() => {
   loadUsers();
 });
 
-function statusColor(
-  status: {
-    id: number
-    name: string
-  },
-) {
-
-  switch (
-    status.name.toLowerCase()
-  ) {
-
+function statusColor(status: { id: number; name: string }) {
+  switch (status.name.toLowerCase()) {
     case 'active':
       return 'success';
 
@@ -90,7 +60,7 @@ function statusColor(
   }
 }
 
-function roleLabel( role?: string) {
+function roleLabel(role?: string) {
   switch (role?.toLowerCase()) {
     case 'guest':
       return 'Gast';
@@ -105,76 +75,46 @@ function roleLabel( role?: string) {
   }
 }
 
-async function setRole(
-  user: UserListItem,
-  roleName: string,
-) {
+async function setRole(user: UserListItem, roleName: string) {
   try {
-    await updateUser(
-      user.id,
-      {
-        role: {
-          id:
-            roleMap[
-              roleName
-            ],
-        },
-      }      
-    );
+    await updateUser(user.id, {
+      role: {
+        id: roleMap[roleName],
+      },
+    });
 
     // Liste neu laden
     await loadUsers();
-
   } catch (err) {
-
-    console.error(
-      'Fehler beim Rollenwechsel:',
-      err,
-    );
+    console.error('Fehler beim Rollenwechsel:', err);
   }
 }
 
-function openEditModal(
-  user: UserListItem,
-) {
-
+function openEditModal(user: UserListItem) {
   targetUser.value = user;
 
-  editModalVisible.value =
-    true;
+  editModalVisible.value = true;
 }
 
 function onCancel() {
-
-  editModalVisible.value =
-    false;
+  editModalVisible.value = false;
 
   targetUser.value = null;
 }
 
 async function onSave(payload: any) {
-
   if (!targetUser.value) {
     return;
   }
 
   try {
-
-    await updateUser(
-      targetUser.value.id,
-      payload,
-    );
+    await updateUser(targetUser.value.id, payload);
 
     await loadUsers();
 
     onCancel();
-
   } catch (err) {
-
-    console.error(
-      'Fehler beim Speichern:',
-      err,
-    );
+    console.error('Fehler beim Speichern:', err);
   }
 }
 
@@ -188,12 +128,8 @@ async function onResetPassword(email: string) {
     await loadUsers();
     onCancel();
   } catch (err) {
-    console.error(
-      'Fehler beim Zurücksetzten der E-Mail Adresse:',
-      err,
-    );
+    console.error('Fehler beim Zurücksetzten der E-Mail Adresse:', err);
   }
-
 }
 </script>
 
@@ -212,23 +148,34 @@ async function onResetPassword(email: string) {
             <CTable hover class="mb-0">
               <CTableHead>
                 <CTableRow>
-
                   <CTableHeaderCell>Name</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-md-table-cell">Email</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell"
+                    >Email</CTableHeaderCell
+                  >
                   <CTableHeaderCell>Status</CTableHeaderCell>
-                  <CTableHeaderCell><span class="d-md-none">Rolle</span><span class="d-none d-md-inline">Berechtigungen</span></CTableHeaderCell>
-                  <CTableHeaderCell class="text-end"><span class="d-none d-md-inline">Aktionen</span></CTableHeaderCell>
+                  <CTableHeaderCell
+                    ><span class="d-md-none">Rolle</span
+                    ><span class="d-none d-md-inline"
+                      >Berechtigungen</span
+                    ></CTableHeaderCell
+                  >
+                  <CTableHeaderCell class="text-end"
+                    ><span class="d-none d-md-inline"
+                      >Aktionen</span
+                    ></CTableHeaderCell
+                  >
                 </CTableRow>
               </CTableHead>
 
               <CTableBody>
                 <CTableRow v-for="user in users" :key="user.id">
-
                   <CTableDataCell
                     >{{ user.firstName }} {{ user.lastName }}</CTableDataCell
                   >
 
-                  <CTableDataCell class="d-none d-md-table-cell">{{ user.email }}</CTableDataCell>
+                  <CTableDataCell class="d-none d-md-table-cell">{{
+                    user.email
+                  }}</CTableDataCell>
 
                   <CTableDataCell>
                     <CBadge :color="statusColor(user.status)">
@@ -237,10 +184,14 @@ async function onResetPassword(email: string) {
                   </CTableDataCell>
 
                   <CTableDataCell>
-<CDropdown :disabled="isSelf(user)">
-  <CDropdownToggle color="secondary" size="sm" :disabled="isSelf(user)">
-    {{ roleLabel(user.role?.name) }}
-  </CDropdownToggle>
+                    <CDropdown :disabled="isSelf(user)">
+                      <CDropdownToggle
+                        color="secondary"
+                        size="sm"
+                        :disabled="isSelf(user)"
+                      >
+                        {{ roleLabel(user.role?.name) }}
+                      </CDropdownToggle>
                       <CDropdownMenu alignment="end" :teleport="true">
                         <CDropdownItem @click="setRole(user, 'guest')"
                           >Gast</CDropdownItem
@@ -259,15 +210,15 @@ async function onResetPassword(email: string) {
                   </CTableDataCell>
 
                   <CTableDataCell class="text-end">
-                  <CButton
-                  color="primary"
-                  size="sm"
-                  :disabled="isSelf(user)"
-                  @click="openEditModal(user)"
-                  >
-                  <CIcon :icon="cilPencil" class="me-md-1" />
-                  <span class="d-none d-md-inline">Bearbeiten</span>
-                  </CButton>
+                    <CButton
+                      color="primary"
+                      size="sm"
+                      :disabled="isSelf(user)"
+                      @click="openEditModal(user)"
+                    >
+                      <CIcon :icon="cilPencil" class="me-md-1" />
+                      <span class="d-none d-md-inline">Bearbeiten</span>
+                    </CButton>
                   </CTableDataCell>
                 </CTableRow>
               </CTableBody>

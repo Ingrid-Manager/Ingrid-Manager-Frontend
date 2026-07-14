@@ -164,13 +164,11 @@ async function submitForm() {
     saving.value = false;
   }
 }
-
 </script>
 
 <template>
   <div class="flex-grow-1 d-flex flex-column align-items-center pt-3 pb-4">
     <div class="w-100 d-flex flex-column flex-grow-1" style="max-width: 1200px">
-
       <CAlert v-if="errorMessage" color="danger" class="mb-3">
         {{ errorMessage }}
       </CAlert>
@@ -191,9 +189,15 @@ async function submitForm() {
                 <CTableRow>
                   <CTableHeaderCell>Farbe</CTableHeaderCell>
                   <CTableHeaderCell>Bezeichnung</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-md-table-cell">Inventar-ID</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-md-table-cell">Manager E-Mail</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-md-table-cell">Aktionen</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell"
+                    >Inventar-ID</CTableHeaderCell
+                  >
+                  <CTableHeaderCell class="d-none d-md-table-cell"
+                    >Manager E-Mail</CTableHeaderCell
+                  >
+                  <CTableHeaderCell class="d-none d-md-table-cell"
+                    >Aktionen</CTableHeaderCell
+                  >
                 </CTableRow>
               </CTableHead>
               <CTableBody>
@@ -204,7 +208,10 @@ async function submitForm() {
                 </CTableRow>
 
                 <CTableRow v-else-if="resources.length === 0">
-                  <CTableDataCell colspan="5" class="text-center text-muted py-4">
+                  <CTableDataCell
+                    colspan="5"
+                    class="text-center text-muted py-4"
+                  >
                     Keine Resourcen vorhanden.
                   </CTableDataCell>
                 </CTableRow>
@@ -214,13 +221,18 @@ async function submitForm() {
                     <CTableDataCell>
                       <div
                         :style="{ background: resource.color }"
-                        style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12);"
+                        style="
+                          width: 24px;
+                          height: 24px;
+                          border-radius: 4px;
+                          border: 1px solid rgba(0, 0, 0, 0.12);
+                        "
                       />
                     </CTableDataCell>
                     <CTableDataCell>{{ resource.title }}</CTableDataCell>
                     <CTableDataCell class="d-none d-md-table-cell">
                       <CBadge color="secondary" shape="rounded-pill">
-                      {{ resource.inventoryid || '—' }}
+                        {{ resource.inventoryid || '—' }}
                       </CBadge>
                     </CTableDataCell>
                     <CTableDataCell class="d-none d-md-table-cell">
@@ -228,12 +240,12 @@ async function submitForm() {
                     </CTableDataCell>
                     <CTableDataCell class="text-end">
                       <CButton
-                          color="primary"
-                          size="sm"
-                          @click="openEditModal(resource)"
-                          >
-                          <CIcon :icon="cilPencil" class="me-md-1" />
-                          <span class="d-none d-md-inline">Bearbeiten</span>
+                        color="primary"
+                        size="sm"
+                        @click="openEditModal(resource)"
+                      >
+                        <CIcon :icon="cilPencil" class="me-md-1" />
+                        <span class="d-none d-md-inline">Bearbeiten</span>
                       </CButton>
                     </CTableDataCell>
                   </CTableRow>
@@ -268,7 +280,9 @@ async function submitForm() {
             :invalid="nameError"
             placeholder="z. B. Beamer, Auto, …"
           />
-          <CFormFeedback invalid>Bitte eine Bezeichnung eingeben.</CFormFeedback>
+          <CFormFeedback invalid
+            >Bitte eine Bezeichnung eingeben.</CFormFeedback
+          >
         </div>
 
         <!-- Farbe -->
@@ -280,7 +294,9 @@ async function submitForm() {
               :key="color"
               type="button"
               class="color-swatch"
-              :class="{ selected: form.color.toLowerCase() === color.toLowerCase() }"
+              :class="{
+                selected: form.color.toLowerCase() === color.toLowerCase(),
+              }"
               :style="{ background: color }"
               :title="color"
               @click="selectColor(color)"
@@ -302,13 +318,15 @@ async function submitForm() {
         <div class="mb-3">
           <CFormLabel for="resmail">Manager E-Mail</CFormLabel>
           <CFormInput
-           id="resmail"
+            id="resmail"
             v-model="form.manager_email"
-           type="email"
-           :invalid="emailError"
-             placeholder="Standardmäßig die Org. Mailadresse"
-              />
-<CFormFeedback invalid>Bitte eine gültige E-Mail-Adresse eingeben.</CFormFeedback>
+            type="email"
+            :invalid="emailError"
+            placeholder="Standardmäßig die Org. Mailadresse"
+          />
+          <CFormFeedback invalid
+            >Bitte eine gültige E-Mail-Adresse eingeben.</CFormFeedback
+          >
           <div class="form-text text-muted">
             Mailadresse zur Info/Bestätigung
           </div>
@@ -348,7 +366,9 @@ async function submitForm() {
   border-radius: 4px;
   border: 2px solid transparent;
   cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 .color-swatch:hover {

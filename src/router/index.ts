@@ -1,14 +1,14 @@
-import { h, resolveComponent } from 'vue'
+import { h, resolveComponent } from 'vue';
 import {
   createRouter,
   createWebHistory,
   type RouteRecordRaw,
-} from 'vue-router'
+} from 'vue-router';
 
-import { useAuthStore } from '@/stores/auth.store'
+import { useAuthStore } from '@/stores/auth.store';
 
 // Layouts
-import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import DefaultLayout from '@/layouts/DefaultLayout.vue';
 const routes: RouteRecordRaw[] = [
   // ─────────────────────────────────────────────────────────────
   // AUTH
@@ -34,7 +34,7 @@ const routes: RouteRecordRaw[] = [
         path: 'forgot-password',
         name: 'ForgotPassword',
         component: () => import('@/views/auth/ForgotPassword.vue'),
-},
+      },
     ],
   },
 
@@ -87,10 +87,11 @@ const routes: RouteRecordRaw[] = [
         name: 'calendar-import',
         component: () => import('@/views/admin/Calendarimport.vue'),
         beforeEnter: () => {
-          if (import.meta.env.VITE_TERMIN_IMPORT !== 'true') return '/dashboard';
+          if (import.meta.env.VITE_TERMIN_IMPORT !== 'true')
+            return '/dashboard';
         },
         meta: { requiresAuth: true /* + eure roles-meta, falls vorhanden */ },
-      }
+      },
     ],
   },
 
@@ -111,8 +112,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'verwaltung',
         name: 'Ressourcenverwaltung',
-        component: () =>
-          import('@/views/ressourcen/Ressourcen-Verwaltung.vue'),
+        component: () => import('@/views/ressourcen/Ressourcen-Verwaltung.vue'),
       },
     ],
   },
@@ -124,43 +124,43 @@ const routes: RouteRecordRaw[] = [
     path: '/:pathMatch(.*)*',
     redirect: '/dashboard',
   },
-]
+];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior: () => ({ top: 0 }),
-})
+});
 
 // ─────────────────────────────────────────────────────────────
 // AUTH GUARD
 // ─────────────────────────────────────────────────────────────
 router.beforeEach(async (to, from, next) => {
-  const auth = useAuthStore()
-  const token = localStorage.getItem('access_token')
+  const auth = useAuthStore();
+  const token = localStorage.getItem('access_token');
 
   if (token && !auth.user) {
     try {
-      await auth.fetchUser()
+      await auth.fetchUser();
     } catch (error) {
-      console.error(error)
-    } 
+      console.error(error);
+    }
   }
 
-  const isLoggedIn = auth.isAuthenticated
-  const isAuthRoute = to.path.startsWith('/auth')
+  const isLoggedIn = auth.isAuthenticated;
+  const isAuthRoute = to.path.startsWith('/auth');
 
   // Nicht eingeloggt
   if (!isLoggedIn && !isAuthRoute) {
-    return next('/auth/login')
+    return next('/auth/login');
   }
 
   // Bereits eingeloggt
   if (isLoggedIn && isAuthRoute) {
-    return next('/dashboard')
+    return next('/dashboard');
   }
 
-  next()
-})
+  next();
+});
 
-export default router
+export default router;

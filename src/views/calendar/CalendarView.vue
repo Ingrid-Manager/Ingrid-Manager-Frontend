@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 
 import type {
   CalendarOptions,
@@ -13,7 +13,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import deLocale from '@fullcalendar/core/locales/de';
-import listPlugin from '@fullcalendar/list'
+import listPlugin from '@fullcalendar/list';
 
 import EventModal from '@/components/modals/EventModal.vue';
 import SeriesEventChoiceModal from '@/components/modals/SeriesEventChoiceModal.vue';
@@ -32,14 +32,16 @@ import { deleteSeriesEvent } from '@/api/series/deleteSeriesEvent';
 import { createSeriesEvent } from '@/api/series/createSeriesEvent';
 
 // ─── Breakpoint ───────────────────────────────────────────────────────────────
-const windowWidth = ref(window.innerWidth)
+const windowWidth = ref(window.innerWidth);
 
-const onResize = () => { windowWidth.value = window.innerWidth }
+const onResize = () => {
+  windowWidth.value = window.innerWidth;
+};
 
-onMounted(() => window.addEventListener('resize', onResize))
-onUnmounted(() => window.removeEventListener('resize', onResize))
+onMounted(() => window.addEventListener('resize', onResize));
+onUnmounted(() => window.removeEventListener('resize', onResize));
 
-const isMobile = computed(() => windowWidth.value < 1000)
+const isMobile = computed(() => windowWidth.value < 1000);
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 const sidebarVisible = ref(true);
 const rooms = ref<RoomNames[]>([]);
@@ -52,20 +54,23 @@ const hiddenRoomIds = String(import.meta.env.VITE_HIDDEN_ROOM_IDS ?? '')
   .map(Number);
 onMounted(async () => {
   try {
-    rooms.value = await getRoomNames()
+    rooms.value = await getRoomNames();
     rooms.value.forEach((room) => {
-      roomChecked.value[room.id] = !hiddenRoomIds.includes(room.id)
-    })
+      roomChecked.value[room.id] = !hiddenRoomIds.includes(room.id);
+    });
   } catch (err) {
-    console.error('Fehler beim Laden der Räume:', err)
+    console.error('Fehler beim Laden der Räume:', err);
   }
 });
 
-
-watch(roomChecked, () => {
-  const calendarApi = calendarRef.value?.getApi();
-  calendarApi?.refetchEvents();
-}, { deep: true });
+watch(
+  roomChecked,
+  () => {
+    const calendarApi = calendarRef.value?.getApi();
+    calendarApi?.refetchEvents();
+  },
+  { deep: true },
+);
 
 //Tooltip & Event State
 const tooltip = ref<HTMLElement | null>(null);
@@ -83,10 +88,7 @@ const formData = ref<PrefillData>({
   roomId: 0,
 });
 
-const editMode = ref<
-  'event' |
-  'split'
->('event');
+const editMode = ref<'event' | 'split'>('event');
 
 function openModal(prefill: PrefillData = {}) {
   formData.value = prefill;
@@ -98,40 +100,26 @@ function closeModal() {
   selectedEvent.value = null;
   isEditing.value = false;
   modalError.value = '';
-  editMode.value = 'event'
+  editMode.value = 'event';
 }
 
 async function handleSave(payload: any) {
   try {
     if (isEditing.value) {
-
       switch (editMode.value) {
-
         case 'event':
-
-          await updateCalendarEvent(
-            selectedEvent.value!.id,
-            payload,
-          );
+          await updateCalendarEvent(selectedEvent.value!.id, payload);
           break;
 
         case 'split':
+          await splitSeriesEvent(selectedEvent.value!.seriesId!, {
+            splitDate: selectedEvent.value!.start.split('T')[0],
 
-          await splitSeriesEvent(
-            selectedEvent.value!.seriesId!,
-            {
-              splitDate:
-                selectedEvent.value!.start
-                  .split('T')[0],
-
-              ...payload,
-            },
-          );
+            ...payload,
+          });
           break;
       }
-
     } else if (Array.isArray(payload)) {
-
       // Benutzerdefinierte Termine: mehrere Einzeltermine auf einmal anlegen.
       // Jeder Termin ist ein eigenständiges Event (kein Backend-Series-Objekt).
       const results = await Promise.allSettled(
@@ -141,9 +129,7 @@ async function handleSave(payload: any) {
       const failed = results.filter((r) => r.status === 'rejected');
 
       // Kalender aktualisieren, auch wenn nur ein Teil der Termine geklappt hat
-      calendarRef.value
-        ?.getApi()
-        ?.refetchEvents();
+      calendarRef.value?.getApi()?.refetchEvents();
 
       if (failed.length > 0) {
         modalError.value =
@@ -154,40 +140,35 @@ async function handleSave(payload: any) {
 
       closeModal();
       return;
-
     } else {
+      if (!isEditing.value && payload.isSeries) {
+        const weekday = new Date(payload.start).getDay();
+        const seriespayload = {
+          title: payload.title,
+          description: payload.description,
 
-      if (!isEditing.value && payload.isSeries) { 
-          const weekday = new Date(payload.start).getDay();
-          const seriespayload = {
-            title: payload.title,
-            description: payload.description,
+          roomid: payload.roomid,
+          categoryid: payload.categoryid,
 
-            roomid: payload.roomid,
-            categoryid: payload.categoryid,
+          startTime: payload.start.split('T')[1].substring(0, 5),
 
-            startTime: payload.start.split('T')[1].substring(0, 5),
+          endTime: payload.end.split('T')[1].substring(0, 5),
 
-            endTime: payload.end.split('T')[1].substring(0, 5),
+          seriesStart: payload.start,
+          seriesEnd: payload.endSeriesDate,
 
-            seriesStart: payload.start,
-            seriesEnd: payload.endSeriesDate,
-
-            weekdays: [weekday],
-            frequency: payload.frequency,
-            runDuringSchoolHolidays: payload.runDuringSchoolHolidays
-          }
-          await createSeriesEvent(seriespayload);
+          weekdays: [weekday],
+          frequency: payload.frequency,
+          runDuringSchoolHolidays: payload.runDuringSchoolHolidays,
+        };
+        await createSeriesEvent(seriespayload);
       } else {
         await createEvent(payload);
       }
-
     }
 
     closeModal();
-    calendarRef.value
-      ?.getApi()
-      ?.refetchEvents();
+    calendarRef.value?.getApi()?.refetchEvents();
   } catch (err: any) {
     console.error('Fehler beim Speichern:', err);
     if (err.response?.status === 409) {
@@ -198,11 +179,8 @@ async function handleSave(payload: any) {
   }
 }
 
-async function handleDelete(
-  id: string,
-) {
+async function handleDelete(id: string) {
   try {
-
     if (editMode.value === 'split' && selectedEvent.value?.seriesId) {
       await deleteSeriesEvent(selectedEvent.value.seriesId);
     } else {
@@ -211,16 +189,9 @@ async function handleDelete(
 
     closeModal();
 
-    calendarRef.value
-      ?.getApi()
-      ?.refetchEvents();
-
+    calendarRef.value?.getApi()?.refetchEvents();
   } catch (err) {
-
-    console.error(
-      'Fehler beim Löschen:',
-      err,
-    );
+    console.error('Fehler beim Löschen:', err);
   }
 }
 
@@ -247,7 +218,6 @@ const canEditEvent = computed(() => {
 });
 
 function openSingleEvent() {
-
   editMode.value = 'event';
   showSeriesChoiceModal.value = false;
 
@@ -306,14 +276,14 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       click: () => openModal(),
     },
   },
-eventClick: (info: EventClickArg) => {
-  if (isGuest.value) {
-    return; // Gäste dürfen das Modal nicht öffnen
-  }
-  if (info.event.display === 'background') {
-    return; // Hintergrund-Events (z. B. Ferien) sind nicht bearbeitbar
-  }
-  if (info.event.extendedProps.seriesId) {
+  eventClick: (info: EventClickArg) => {
+    if (isGuest.value) {
+      return; // Gäste dürfen das Modal nicht öffnen
+    }
+    if (info.event.display === 'background') {
+      return; // Hintergrund-Events (z. B. Ferien) sind nicht bearbeitbar
+    }
+    if (info.event.extendedProps.seriesId) {
       selectedEvent.value = {
         id: info.event.id,
         title: info.event.title,
@@ -364,18 +334,20 @@ eventClick: (info: EventClickArg) => {
 
   // Header-Toolbar mit Ansichts-Umschalter
 
-headerToolbar: isMobile.value
-  ? {
-    left: 'prev,next',
-    center: 'title',
-    right: isGuest.value ? '' : 'ressourceBuchen',
-  }
-  : {
-    //left: 'toggleSidebar prev,next today ressourceBuchen',
-    left: isGuest.value ? 'prev,next today' : 'prev,next today ressourceBuchen',
-    center: 'title',
-    right: 'dayGridMonth,timeGridWeek,listMonth',
-  },
+  headerToolbar: isMobile.value
+    ? {
+        left: 'prev,next',
+        center: 'title',
+        right: isGuest.value ? '' : 'ressourceBuchen',
+      }
+    : {
+        //left: 'toggleSidebar prev,next today ressourceBuchen',
+        left: isGuest.value
+          ? 'prev,next today'
+          : 'prev,next today ressourceBuchen',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,listMonth',
+      },
   views: {
     listWeek: {
       buttonText: 'Liste',
@@ -405,27 +377,21 @@ headerToolbar: isMobile.value
 
   events: async (fetchInfo: EventSourceFuncArg) => {
     try {
-      const events = await fetchEvents(
-        fetchInfo.startStr,
-        fetchInfo.endStr,
-      );
+      const events = await fetchEvents(fetchInfo.startStr, fetchInfo.endStr);
 
       return events
         .filter((e) => roomChecked.value[e.roomId] !== false)
         .map((e) => {
           const normalizedColor =
-            e.color?.length === 5
-              ? e.color.slice(0, 4)
-              : e.color;
+            e.color?.length === 5 ? e.color.slice(0, 4) : e.color;
 
           return {
             id: String(e.id),
             title: e.title,
             allDay: e.allDay,
             color: normalizedColor,
-                  start: e.start,
-                  end: e.end,
-
+            start: e.start,
+            end: e.end,
 
             display: e.isBackground ? 'background' : 'block',
 
@@ -440,67 +406,57 @@ headerToolbar: isMobile.value
             },
           };
         });
-
     } catch (err) {
-      console.error('Fehler beim Laden der Events:', err,);
+      console.error('Fehler beim Laden der Events:', err);
       return [];
     }
   },
 
-// ─── Listen-Ansicht: Titel + Beschreibung anzeigen (nicht für Gäste) ──────
-eventContent: (arg) => {
-  // In allen anderen Ansichten (Monat, Woche) Standard-Rendering beibehalten
-  if (!arg.view.type.startsWith('list')) {
-    return true;
-  }
+  // ─── Listen-Ansicht: Titel + Beschreibung anzeigen (nicht für Gäste) ──────
+  eventContent: (arg) => {
+    // In allen anderen Ansichten (Monat, Woche) Standard-Rendering beibehalten
+    if (!arg.view.type.startsWith('list')) {
+      return true;
+    }
 
-  const description = isGuest.value
-    ? ''
-    : (arg.event.extendedProps.description || '');
+    const description = isGuest.value
+      ? ''
+      : arg.event.extendedProps.description || '';
 
-  const titleEl = document.createElement('div');
-  titleEl.className = 'fc-event-title fc-sticky';
-  titleEl.textContent = description
-    ? `${arg.event.title} | ${description}`
-    : arg.event.title;
+    const titleEl = document.createElement('div');
+    titleEl.className = 'fc-event-title fc-sticky';
+    titleEl.textContent = description
+      ? `${arg.event.title} | ${description}`
+      : arg.event.title;
 
-  return { domNodes: [titleEl] };
-},
+    return { domNodes: [titleEl] };
+  },
 
   eventMouseEnter: (info) => {
+    // Für Hintergrund-Events (z. B. Ferien) keinen Tooltip anzeigen
+    if (info.event.display === 'background') {
+      return;
+    }
 
-  // Für Hintergrund-Events (z. B. Ferien) keinen Tooltip anzeigen
-  if (info.event.display === 'background') {
-    return;
-  }
-
-  const userName = info.event.extendedProps.userName || '';
+    const userName = info.event.extendedProps.userName || '';
 
     const start =
-      info.event.start
-        ?.toLocaleTimeString(
-          'de-DE',
-          {
-            hour: '2-digit',
-            minute: '2-digit',
-          },
-        ) || '';
+      info.event.start?.toLocaleTimeString('de-DE', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }) || '';
 
     const end =
-      info.event.end
-        ?.toLocaleTimeString(
-          'de-DE',
-          {
-            hour: '2-digit',
-            minute: '2-digit',
-          },
-        ) || '';
+      info.event.end?.toLocaleTimeString('de-DE', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }) || '';
 
-    const room =
-      info.event.extendedProps.roomTitle || '';
+    const room = info.event.extendedProps.roomTitle || '';
 
-const description =
-  isGuest.value ? '' : (info.event.extendedProps.description || '');
+    const description = isGuest.value
+      ? ''
+      : info.event.extendedProps.description || '';
 
     const el = document.createElement('div');
 
@@ -521,36 +477,36 @@ const description =
     ${room}
   </div>
 
-  ${userName ? `
+  ${
+    userName
+      ? `
   <div class="calendar-tooltip-row">
     <strong>Erstellt von:</strong>
     ${userName}
-  </div>` : ''}
+  </div>`
+      : ''
+  }
 
-  ${description
-        ? `<div class="calendar-tooltip-description">${description}</div>`
-        : ''
-      }
+  ${
+    description
+      ? `<div class="calendar-tooltip-description">${description}</div>`
+      : ''
+  }
 `;
 
     document.body.appendChild(el);
 
-    const rect =
-      info.el.getBoundingClientRect();
+    const rect = info.el.getBoundingClientRect();
 
-    el.style.top =
-      `${rect.bottom + 8}px`;
+    el.style.top = `${rect.bottom + 8}px`;
 
-    el.style.left =
-      `${rect.left}px`;
+    el.style.left = `${rect.left}px`;
 
     tooltip.value = el;
   },
 
   eventMouseLeave: () => {
-
     if (tooltip.value) {
-
       tooltip.value.remove();
 
       tooltip.value = null;
@@ -579,12 +535,14 @@ const description =
     Die Sidebar hat keinerlei position:fixed – sie ist ein normales Flex-Kind.
   -->
   <div class="calendar-page" :class="{ 'calendar-page--mobile': isMobile }">
-
     <!-- Sidebar: auf Desktop links, auf Mobile unten (via CSS order) -->
-    <aside class="room-sidebar" :class="{
-      'room-sidebar--hidden': !sidebarVisible && !isMobile,
-      'room-sidebar--mobile': isMobile,
-    }">
+    <aside
+      class="room-sidebar"
+      :class="{
+        'room-sidebar--hidden': !sidebarVisible && !isMobile,
+        'room-sidebar--mobile': isMobile,
+      }"
+    >
       <div class="room-sidebar__header">
         <span class="room-sidebar__title">Raumlegende</span>
       </div>
@@ -592,9 +550,19 @@ const description =
       <ul class="room-sidebar__list">
         <li v-for="room in rooms" :key="room.id" class="room-sidebar__item">
           <label :for="`room-cb-${room.id}`" class="room-sidebar__row">
-            <input type="checkbox" :id="`room-cb-${room.id}`" v-model="roomChecked[room.id]"
-              class="room-sidebar__checkbox" :style="{ '--room-color': room.color || '#321fdb' }" />
-            <span class="room-sidebar__label" :class="{ 'room-sidebar__label--unchecked': !roomChecked[room.id] }">
+            <input
+              type="checkbox"
+              :id="`room-cb-${room.id}`"
+              v-model="roomChecked[room.id]"
+              class="room-sidebar__checkbox"
+              :style="{ '--room-color': room.color || '#321fdb' }"
+            />
+            <span
+              class="room-sidebar__label"
+              :class="{
+                'room-sidebar__label--unchecked': !roomChecked[room.id],
+              }"
+            >
               {{ room.title }}
             </span>
           </label>
@@ -610,13 +578,24 @@ const description =
     <div class="calendar-wrapper" :style="isMobile ? { height: '75dvh' } : {}">
       <FullCalendar ref="calendarRef" :options="calendarOptions" />
     </div>
-
   </div>
 
-  <EventModal :visible="showModal" :prefill="formData" :event="selectedEvent" :is-editing="isEditing"
-    :can-edit="canEditEvent" :error-message="modalError" @close="closeModal" @save="handleSave" @delete="handleDelete" />
+  <EventModal
+    :visible="showModal"
+    :prefill="formData"
+    :event="selectedEvent"
+    :is-editing="isEditing"
+    :can-edit="canEditEvent"
+    :error-message="modalError"
+    @close="closeModal"
+    @save="handleSave"
+    @delete="handleDelete"
+  />
 
-  <SeriesEventChoiceModal :visible="showSeriesChoiceModal" @close="showSeriesChoiceModal = false" 
-    @single="openSingleEvent" @split="openSplitEvent" />
-
+  <SeriesEventChoiceModal
+    :visible="showSeriesChoiceModal"
+    @close="showSeriesChoiceModal = false"
+    @single="openSingleEvent"
+    @split="openSplitEvent"
+  />
 </template>

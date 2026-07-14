@@ -53,7 +53,9 @@ const submit = async () => {
     return;
   }
 
-  if (form.value['register-password'] !== form.value['register-password-confirm']) {
+  if (
+    form.value['register-password'] !== form.value['register-password-confirm']
+  ) {
     error.value = 'Die Passwörter stimmen nicht überein.';
     return;
   }
@@ -68,16 +70,16 @@ const submit = async () => {
   try {
     await register({
       email: form.value['register-email'],
-      password:form.value['register-password'],
+      password: form.value['register-password'],
       firstName: form.value['register-firstname'],
-      lastName:form.value['register-lastname'],
+      lastName: form.value['register-lastname'],
     });
 
     success.value = true;
-
   } catch (err: any) {
     console.error(err);
-    error.value = err?.response?.data?.message || 'Registrierung fehlgeschlagen.';
+    error.value =
+      err?.response?.data?.message || 'Registrierung fehlgeschlagen.';
   } finally {
     loading.value = false;
   }
@@ -97,10 +99,15 @@ const submit = async () => {
                   <div v-if="success">
                     <h1>Registrierung erfolgreich</h1>
                     <p class="text-body-secondary">
-                      Ihr Konto wurde erstellt. Sie müssen von Ihrem Administrator
-                      freigeschaltet werden, bevor Sie sich anmelden können.
+                      Ihr Konto wurde erstellt. Sie müssen von Ihrem
+                      Administrator freigeschaltet werden, bevor Sie sich
+                      anmelden können.
                     </p>
-                    <CButton color="primary" class="mt-2" @click="router.push('/auth/login')">
+                    <CButton
+                      color="primary"
+                      class="mt-2"
+                      @click="router.push('/auth/login')"
+                    >
                       Zur Anmeldung
                     </CButton>
                   </div>
@@ -118,9 +125,9 @@ const submit = async () => {
                     >
                       {{ error }}
                     </CAlert>
-                    <CAlert v-if="success" color="success" class="mb-3"> 
-                      Registrierung erfolgreich.
-                      Ein Administrator muss den Account freischalten.
+                    <CAlert v-if="success" color="success" class="mb-3">
+                      Registrierung erfolgreich. Ein Administrator muss den
+                      Account freischalten.
                     </CAlert>
 
                     <!-- Vorname & Nachname -->
@@ -226,7 +233,9 @@ const submit = async () => {
 
             <CCol :xs="12" :md="5">
               <CCard class="text-white bg-primary py-5 h-100">
-                <CCardBody class="text-center d-flex flex-column justify-content-center">
+                <CCardBody
+                  class="text-center d-flex flex-column justify-content-center"
+                >
                   <h2>Willkommen</h2>
                   <p>
                     Nach der Registrierung muss Ihr Konto von der Verwaltung

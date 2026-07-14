@@ -6,7 +6,13 @@ import type { RoomNames } from '@/helper/interfaces/room/RoomNames';
 
 import { useEventForm } from '@/composables/useEventForm';
 import { getRoomNames } from '@/api/getRoomNames';
-import { CCol, CForm, CFormCheck, CFormLabel, CFormTextarea } from '@coreui/vue';
+import {
+  CCol,
+  CForm,
+  CFormCheck,
+  CFormLabel,
+  CFormTextarea,
+} from '@coreui/vue';
 import { PrefillData } from '@/helper/interfaces/PrefillData';
 import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
@@ -63,7 +69,8 @@ watch(
     form.value.isSeries = prefill.isSeries ?? false;
     form.value.frequency = prefill.frequency ?? 'WEEKLY';
     form.value.endSeriesDate = prefill.endDate ?? '';
-    form.value.runDuringSchoolHolidays = prefill.runDuringSchoolHolidays ?? false;
+    form.value.runDuringSchoolHolidays =
+      prefill.runDuringSchoolHolidays ?? false;
   },
   {
     immediate: true,
@@ -117,30 +124,40 @@ function onCustomSeriesToggle(checked: boolean) {
 }
 
 // Startdatum → Enddatum vorausfüllen
-watch(() => form.value.startDate, (newDate) => {
-  if (!newDate) return;
-  if (!form.value.endDate || form.value.endDate < newDate) {
-    form.value.endDate = newDate;
-  }
-});
+watch(
+  () => form.value.startDate,
+  (newDate) => {
+    if (!newDate) return;
+    if (!form.value.endDate || form.value.endDate < newDate) {
+      form.value.endDate = newDate;
+    }
+  },
+);
 
 // Startzeit → Endzeit +1 Stunde vorausfüllen
-watch(() => form.value.startTime, (newTime) => {
-  if (!newTime) return;
-  const [hours, minutes] = newTime.split(':').map(Number);
-  const endHour = (hours + 1) % 24;
-  form.value.endTime = `${String(endHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-});
+watch(
+  () => form.value.startTime,
+  (newTime) => {
+    if (!newTime) return;
+    const [hours, minutes] = newTime.split(':').map(Number);
+    const endHour = (hours + 1) % 24;
+    form.value.endTime = `${String(endHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  },
+);
 
 const dateError = computed(() => {
   if (!form.value.startDate || !form.value.endDate) return '';
-  if (form.value.endDate < form.value.startDate) return 'Das Enddatum darf nicht vor dem Startdatum liegen.';
+  if (form.value.endDate < form.value.startDate)
+    return 'Das Enddatum darf nicht vor dem Startdatum liegen.';
   return '';
 });
 
 const timeError = computed(() => {
   if (!form.value.startTime || !form.value.endTime) return '';
-  if (form.value.startDate === form.value.endDate && form.value.endTime <= form.value.startTime) {
+  if (
+    form.value.startDate === form.value.endDate &&
+    form.value.endTime <= form.value.startTime
+  ) {
     return 'Die Endzeit darf nicht vor oder gleich der Startzeit liegen.';
   }
   return '';
@@ -167,7 +184,6 @@ function closeModal() {
 const NO_END_DATE_SENTINEL = '2050-12-31';
 
 function handleSubmit() {
-
   validated.value = true;
 
   const el = document.getElementById('eventModalForm');
@@ -207,8 +223,9 @@ function handleSubmit() {
     // Bei mehrtägigen Terminen: Enddatum relativ zum jeweiligen Startdatum berechnen
     const dayDiff =
       form.value.endDate && form.value.startDate
-        ? (new Date(form.value.endDate).getTime() - new Date(form.value.startDate).getTime()) /
-        (1000 * 60 * 60 * 24)
+        ? (new Date(form.value.endDate).getTime() -
+            new Date(form.value.startDate).getTime()) /
+          (1000 * 60 * 60 * 24)
         : 0;
 
     const endDate = new Date(date);
@@ -260,7 +277,6 @@ function handleDelete() {
   emit('delete', props.event.id);
   closeModal();
 }
-
 </script>
 
 <template>
@@ -273,15 +289,16 @@ function handleDelete() {
     </CModalHeader>
 
     <CModalBody>
-      <CAlert
-        v-if="errorMessage"
-        color="danger"
-        class="mb-3"
-      >
+      <CAlert v-if="errorMessage" color="danger" class="mb-3">
         <strong>Termin konnte nicht gespeichert werden</strong>
         <div>{{ errorMessage }}</div>
       </CAlert>
-      <CForm id="eventModalForm" novalidate :class="{ 'was-validated': validated }" @submit.prevent="handleSubmit">
+      <CForm
+        id="eventModalForm"
+        novalidate
+        :class="{ 'was-validated': validated }"
+        @submit.prevent="handleSubmit"
+      >
         <!-- Titel -->
         <CRow class="mb-3">
           <CCol>
@@ -296,7 +313,11 @@ function handleDelete() {
           <CCol>
             <CFormLabel>Beschreibung</CFormLabel>
 
-            <CFormInput v-model="form.description" rows="4" :disabled="!canEdit" />
+            <CFormInput
+              v-model="form.description"
+              rows="4"
+              :disabled="!canEdit"
+            />
           </CCol>
         </CRow>
         <!-- Ersteller (nur bei bestehendem Termin) -->
@@ -313,7 +334,11 @@ function handleDelete() {
             <CFormLabel>Raum</CFormLabel>
             <CFormSelect v-model="form.room" required :disabled="!canEdit">
               <option value="">Bitte wählen</option>
-              <option v-for="room in roomNames" :key="room.id" :value="String(room.id)">
+              <option
+                v-for="room in roomNames"
+                :key="room.id"
+                :value="String(room.id)"
+              >
                 {{ room.title }}
               </option>
             </CFormSelect>
@@ -324,12 +349,23 @@ function handleDelete() {
         <CRow class="mb-3">
           <CCol md="6">
             <CFormLabel>Startzeit</CFormLabel>
-            <CFormInput v-model="form.startTime" type="time" required :disabled="!canEdit"/>
+            <CFormInput
+              v-model="form.startTime"
+              type="time"
+              required
+              :disabled="!canEdit"
+            />
           </CCol>
 
           <CCol md="6">
             <CFormLabel>Endzeit</CFormLabel>
-            <CFormInput v-model="form.endTime" type="time" required :invalid="validated && !!timeError" :disabled="!canEdit"/>
+            <CFormInput
+              v-model="form.endTime"
+              type="time"
+              required
+              :invalid="validated && !!timeError"
+              :disabled="!canEdit"
+            />
             <CFormFeedback invalid>{{ timeError }}</CFormFeedback>
           </CCol>
         </CRow>
@@ -367,18 +403,29 @@ function handleDelete() {
               :locale="de"
               :formats="{ input: 'dd.MM.yyyy' }"
               six-weeks="center"
-              :input-attrs="{ state: validated && !!dateError ? false : undefined }"
+              :input-attrs="{
+                state: validated && !!dateError ? false : undefined,
+              }"
             />
-            <CFormFeedback invalid :class="{ 'd-block': validated && !!dateError }">{{ dateError }}</CFormFeedback>
+            <CFormFeedback
+              invalid
+              :class="{ 'd-block': validated && !!dateError }"
+              >{{ dateError }}</CFormFeedback
+            >
           </CCol>
         </CRow>
         <!-- Serie -->
-<!-- Serie: im Bearbeiten-Modus nur anzeigen, wenn der Termin tatsächlich Teil einer Serie ist -->
-<CRow class="mb-3" v-if="!isEditing || form.isSeries">
-  <CCol>
-    <CFormCheck id="event-modal-isseries" v-model="form.isSeries" label="Termin ist Teil einer Serie" :disabled="!canEdit"/>
-  </CCol>
-</CRow>
+        <!-- Serie: im Bearbeiten-Modus nur anzeigen, wenn der Termin tatsächlich Teil einer Serie ist -->
+        <CRow class="mb-3" v-if="!isEditing || form.isSeries">
+          <CCol>
+            <CFormCheck
+              id="event-modal-isseries"
+              v-model="form.isSeries"
+              label="Termin ist Teil einer Serie"
+              :disabled="!canEdit"
+            />
+          </CCol>
+        </CRow>
 
         <CCollapse :visible="showSeriesOptions">
           <CCard class="mb-3 series-options-card">
@@ -390,7 +437,11 @@ function handleDelete() {
                 <CRow class="mb-3">
                   <CCol md="6">
                     <CFormLabel>Wiederholen bis zum</CFormLabel>
-                    <CFormInput v-model="form.endSeriesDate" type="date" :disabled="!canEdit" />
+                    <CFormInput
+                      v-model="form.endSeriesDate"
+                      type="date"
+                      :disabled="!canEdit"
+                    />
                   </CCol>
 
                   <CCol md="6">
@@ -412,14 +463,14 @@ function handleDelete() {
                 <hr class="series-divider" />
               </div>
 
-            <CFormCheck
-            id="event-modal-custom-series"
-            v-if="!isEditing"
-            :model-value="form.customSeries"
-            label="Benutzerdefiniert (feste Einzeltermine statt Wiederholungsmuster)"
-            :disabled="!canEdit"
-            @update:model-value="onCustomSeriesToggle"
-            />
+              <CFormCheck
+                id="event-modal-custom-series"
+                v-if="!isEditing"
+                :model-value="form.customSeries"
+                label="Benutzerdefiniert (feste Einzeltermine statt Wiederholungsmuster)"
+                :disabled="!canEdit"
+                @update:model-value="onCustomSeriesToggle"
+              />
             </CCardBody>
           </CCard>
         </CCollapse>
@@ -477,10 +528,15 @@ function handleDelete() {
 
               <CFormLabel>Mehrere Termine per Text einfügen</CFormLabel>
               <div class="series-hint">
-                Ein Datum pro Zeile oder durch Komma/Semikolon getrennt, Format (z. B. 12.08.2026 oder 5.8.26)
+                Ein Datum pro Zeile oder durch Komma/Semikolon getrennt, Format
+                (z. B. 12.08.2026 oder 5.8.26)
               </div>
 
-              <CFormTextarea v-model="datesText" rows="3" :disabled="!canEdit" />
+              <CFormTextarea
+                v-model="datesText"
+                rows="3"
+                :disabled="!canEdit"
+              />
 
               <CButton
                 type="button"

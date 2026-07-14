@@ -12,10 +12,15 @@ const auth = useAuthStore();
 const versionStore = useVersionStore();
 const frontendVersion = __APP_VERSION__;
 const headerClassNames = ref<string>('mb-2 p-0');
-  //TODO: Vorher: 'mb-4 p-0' Dadurch der Abstand zwischen Navbar und App-content größer
+//TODO: Vorher: 'mb-4 p-0' Dadurch der Abstand zwischen Navbar und App-content größer
 const isGuest = computed(() => auth.user?.role?.name === 'guest');
-const canAccessAdmin = computed(() => auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',);
-const showTerminImport = computed(() => import.meta.env.VITE_TERMIN_IMPORT === 'true');
+const canAccessAdmin = computed(
+  () =>
+    auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',
+);
+const showTerminImport = computed(
+  () => import.meta.env.VITE_TERMIN_IMPORT === 'true',
+);
 type ColorMode = 'light' | 'dark' | 'auto';
 
 const { colorMode, setColorMode } = useColorModes(
@@ -31,10 +36,16 @@ async function handleLogout() {
 }
 
 // Ressourcen-Button ist aktiv wenn Route mit /ressourcen beginnt
-const isOnDashboard = computed(() => route.path.startsWith('/dashboard') || route.path === '/')
+const isOnDashboard = computed(
+  () => route.path.startsWith('/dashboard') || route.path === '/',
+);
 
-const mobileNavLabel = computed(() => isOnDashboard.value ? 'Ressourcen' : 'Kalender')
-const mobileNavHref = computed(() => isOnDashboard.value ? '/ressourcen' : '/dashboard')
+const mobileNavLabel = computed(() =>
+  isOnDashboard.value ? 'Ressourcen' : 'Kalender',
+);
+const mobileNavHref = computed(() =>
+  isOnDashboard.value ? '/ressourcen' : '/dashboard',
+);
 
 onMounted(() => {
   document.addEventListener('scroll', () => {
@@ -46,14 +57,11 @@ onMounted(() => {
 
   versionStore.fetchBackendVersion();
 });
-
-
 </script>
 
 <template>
   <CHeader position="sticky" :class="headerClassNames">
     <CContainer class="border-bottom px-4" fluid>
-
       <!-- ── Desktop Nav (Links) ──────────────────────────────────────────── -->
       <CHeaderNav class="d-none d-md-flex">
         <CNavItem>
@@ -62,45 +70,66 @@ onMounted(() => {
         <CNavItem>
           <CNavLink href="/ressourcen">Ressourcen</CNavLink>
         </CNavItem>
-<CDropdown v-if="canAccessAdmin" variant="nav-item" :popper="false">
-  <CDropdownToggle>Administration</CDropdownToggle>
-  <CDropdownMenu>
-    <CDropdownItem href="/admin/users">Benutzerverwaltung</CDropdownItem>
-    <CDropdownItem href="/admin/rooms">Raumverwaltung</CDropdownItem>
-    <CDropdownItem href="/ressourcen/verwaltung">Ressourcenverwaltung</CDropdownItem>
-    <CDropdownItem href="/admin/settings">Anwendungseinstellungen</CDropdownItem>
-    <CDropdownItem v-if="showTerminImport" href="/admin/import">Termin Import</CDropdownItem>
-    <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
-  </CDropdownMenu>
-</CDropdown>
+        <CDropdown v-if="canAccessAdmin" variant="nav-item" :popper="false">
+          <CDropdownToggle>Administration</CDropdownToggle>
+          <CDropdownMenu>
+            <CDropdownItem href="/admin/users"
+              >Benutzerverwaltung</CDropdownItem
+            >
+            <CDropdownItem href="/admin/rooms">Raumverwaltung</CDropdownItem>
+            <CDropdownItem href="/ressourcen/verwaltung"
+              >Ressourcenverwaltung</CDropdownItem
+            >
+            <CDropdownItem href="/admin/settings"
+              >Anwendungseinstellungen</CDropdownItem
+            >
+            <CDropdownItem v-if="showTerminImport" href="/admin/import"
+              >Termin Import</CDropdownItem
+            >
+            <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
+          </CDropdownMenu>
+        </CDropdown>
       </CHeaderNav>
 
       <!-- ── Mobile Nav (< md) ─────────────────────────────────────────── -->
-<CHeaderNav class="d-flex d-md-none">
-  <CNavItem>
-    <CNavLink :href="mobileNavHref">
-      {{ mobileNavLabel }}
-    </CNavLink>
-  </CNavItem>
-</CHeaderNav>
+      <CHeaderNav class="d-flex d-md-none">
+        <CNavItem>
+          <CNavLink :href="mobileNavHref">
+            {{ mobileNavLabel }}
+          </CNavLink>
+        </CNavItem>
+      </CHeaderNav>
 
       <!-- ── Rechte Seite: Theme + User (immer sichtbar) ───────────────── -->
       <CHeaderNav class="ms-auto">
-  <!-- Zahnrad nur auf Mobile -->
-  <CDropdown v-if="canAccessAdmin" variant="nav-item" :popper="false" class="d-flex d-md-none">
-    <CDropdownToggle :caret="false">
-      <CIcon icon="cil-settings" size="lg" />
-    </CDropdownToggle>
-    <CDropdownMenu>
-      <CDropdownItem href="/admin/users">Benutzerverwaltung</CDropdownItem>
-      <CDropdownItem href="/admin/rooms">Raumverwaltung</CDropdownItem>
-      <CDropdownItem href="/ressourcen/verwaltung">Ressourcenverwaltung</CDropdownItem>
-      <CDropdownItem href="/admin/settings">Anwendungseinstellungen</CDropdownItem>
-      <CDropdownItem v-if="showTerminImport" href="/admin/import">Termin Import</CDropdownItem>
-      <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
-    </CDropdownMenu>
-  </CDropdown>
-</CHeaderNav>
+        <!-- Zahnrad nur auf Mobile -->
+        <CDropdown
+          v-if="canAccessAdmin"
+          variant="nav-item"
+          :popper="false"
+          class="d-flex d-md-none"
+        >
+          <CDropdownToggle :caret="false">
+            <CIcon icon="cil-settings" size="lg" />
+          </CDropdownToggle>
+          <CDropdownMenu>
+            <CDropdownItem href="/admin/users"
+              >Benutzerverwaltung</CDropdownItem
+            >
+            <CDropdownItem href="/admin/rooms">Raumverwaltung</CDropdownItem>
+            <CDropdownItem href="/ressourcen/verwaltung"
+              >Ressourcenverwaltung</CDropdownItem
+            >
+            <CDropdownItem href="/admin/settings"
+              >Anwendungseinstellungen</CDropdownItem
+            >
+            <CDropdownItem v-if="showTerminImport" href="/admin/import"
+              >Termin Import</CDropdownItem
+            >
+            <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
+          </CDropdownMenu>
+        </CDropdown>
+      </CHeaderNav>
 
       <CHeaderNav>
         <li class="nav-item py-1">
@@ -171,17 +200,13 @@ onMounted(() => {
               <CIcon icon="cil-lock-locked" /> Abmelden
             </CDropdownItem>
             <CDropdownDivider />
-            <CDropdownItem
-              disabled
-              class="text-body-secondary small py-1"
-            >
+            <CDropdownItem disabled class="text-body-secondary small py-1">
               Frontend: v{{ frontendVersion }}<br />
               Backend: v{{ versionStore.backendVersion ?? '…' }}
             </CDropdownItem>
           </CDropdownMenu>
         </CDropdown>
       </CHeaderNav>
-
     </CContainer>
   </CHeader>
 </template>

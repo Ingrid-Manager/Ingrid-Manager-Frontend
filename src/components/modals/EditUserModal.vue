@@ -8,9 +8,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'save', payload: any): void
-  (e: 'cancel'): void
-  (e: 'reset-password', email: string): void
+  (e: 'save', payload: any): void;
+  (e: 'cancel'): void;
+  (e: 'reset-password', email: string): void;
 }>();
 
 const form = ref({
@@ -20,13 +20,14 @@ const form = ref({
   userFunction: '',
   roleId: 2,
   statusId: 1,
-})
-
+});
 
 const deleteCollapseVisible = ref(false);
 
 // Sync form whenever the target user changes
-watch(() => props.user, (user) => {
+watch(
+  () => props.user,
+  (user) => {
     if (!user) {
       return;
     }
@@ -66,19 +67,13 @@ function handleSave() {
 
   if (form.value.roleId !== props.user.role.id) {
     payload.role = {
-      id:
-        Number(
-          form.value.roleId,
-        ),
+      id: Number(form.value.roleId),
     };
   }
 
   if (form.value.statusId !== props.user.status.id) {
     payload.status = {
-      id:
-        Number(
-          form.value.statusId,
-        ),
+      id: Number(form.value.statusId),
     };
   }
 
@@ -94,7 +89,7 @@ const handleConfirmDelete = (): void => {
   deleteCollapseVisible.value = false;
   const payload: any = {};
   payload.status = {
-    id: 4
+    id: 4,
   };
 
   emit('save', payload);
@@ -105,8 +100,8 @@ const handlePasswordReset = (): void => {
     return;
   }
 
-  emit('reset-password', props.user.email)
-}
+  emit('reset-password', props.user.email);
+};
 </script>
 
 <template>
@@ -153,12 +148,12 @@ const handlePasswordReset = (): void => {
           />
         </CCol>
       </CRow>
-      
+
       <hr />
 
       <!-- Rolle und Status -->
-      
-<!-- Rolle + Status -->
+
+      <!-- Rolle + Status -->
       <CRow class="mb-3">
         <CCol :sm="6">
           <CFormLabel>Rolle</CFormLabel>

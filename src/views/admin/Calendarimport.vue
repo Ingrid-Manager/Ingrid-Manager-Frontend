@@ -79,9 +79,12 @@ interface PendingImport {
 // Raum-Zuordnung: Excel-Ortstext -> Raumtitel (wie in der DB hinterlegt).
 // Diese Liste bei Bedarf direkt hier erweitern (kein Redeploy des Backends nötig).
 const ROOM_ALIASES: { keywords: string[]; roomTitle: string }[] = [
-  { keywords: ['Pfarrgarten', 'Gemeindehaus Daverden'], roomTitle: 'Saal' },
-  { keywords: ['St. Laurentius Kirche', 'Kirche Baden', 'St. Sigismund Kirche'], roomTitle: 'Kirche' },
-  { keywords: ['Gemeindehaus Baden'], roomTitle: 'Großer Saal' },
+  { keywords: ['Pfarrgarten', 'Gemeindehaus Daverden'], roomTitle: 'Saal' },
+  {
+    keywords: ['St. Laurentius Kirche', 'Kirche Baden', 'St. Sigismund Kirche'],
+    roomTitle: 'Kirche',
+  },
+  { keywords: ['Gemeindehaus Baden'], roomTitle: 'Großer Saal' },
   // Weitere Zuordnungen hier ergänzen, z.B.:
   // { keywords: ['gemeindehaus'], roomTitle: 'Gemeindehaus' },
 ];
@@ -105,11 +108,13 @@ onMounted(async () => {
     rooms.value = await getRoomNames();
     roomsByNormalizedTitle = new Map();
     rooms.value.forEach((r) => {
-      if (r && typeof r.title === 'string') roomsByNormalizedTitle.set(normalize(r.title), r);
+      if (r && typeof r.title === 'string')
+        roomsByNormalizedTitle.set(normalize(r.title), r);
     });
   } catch (err) {
     console.error('Fehler beim Laden der Räume:', err);
-    loadRoomsError.value = 'Räume konnten nicht geladen werden. Bitte Seite neu laden.';
+    loadRoomsError.value =
+      'Räume konnten nicht geladen werden. Bitte Seite neu laden.';
   } finally {
     loadingRooms.value = false;
   }
@@ -131,7 +136,10 @@ const categoryId = ref<string>('2'); // Default: Gottesdienst
 const fileInputKey = ref(0); // Hochzählen erzwingt Neu-Mount des <input type="file"> (=Reset)
 const selectedFile = ref<File | null>(null);
 const sheetWarning = ref('');
-const importStatus = ref<{ message: string; kind: StatusKind }>({ message: '', kind: '' });
+const importStatus = ref<{ message: string; kind: StatusKind }>({
+  message: '',
+  kind: '',
+});
 const importPhase = ref<ImportPhase>('idle');
 
 const pendingImport = ref<PendingImport | null>(null);
@@ -163,15 +171,23 @@ const importBtnLabel = computed(() => {
 
 const importBtnDisabled = computed(() => {
   if (loadingRooms.value) return true;
-  if (importPhase.value === 'checking' || importPhase.value === 'sending') return true;
-  if (importPhase.value === 'ready') return !pendingImport.value || pendingImport.value.valid.length === 0;
+  if (importPhase.value === 'checking' || importPhase.value === 'sending')
+    return true;
+  if (importPhase.value === 'ready')
+    return !pendingImport.value || pendingImport.value.valid.length === 0;
   return !selectedFile.value; // idle
 });
 
 const showCancelBtn = computed(() => importPhase.value === 'sending');
 
-const okCountLabel = computed(() => (result.pendingValidCount !== null ? 'Bereit zum Anlegen' : 'Angelegt'));
-const okCount = computed(() => (result.pendingValidCount !== null ? result.pendingValidCount : result.created.length));
+const okCountLabel = computed(() =>
+  result.pendingValidCount !== null ? 'Bereit zum Anlegen' : 'Angelegt',
+);
+const okCount = computed(() =>
+  result.pendingValidCount !== null
+    ? result.pendingValidCount
+    : result.created.length,
+);
 
 function alertColor(kind: StatusKind) {
   if (kind === 'ok') return 'success';
@@ -191,7 +207,10 @@ function normalize(text: unknown): string {
 
 function describeRequestError(err: unknown): string {
   const anyErr = err as {
-    response?: { status?: number; data?: { message?: string; errors?: unknown } };
+    response?: {
+      status?: number;
+      data?: { message?: string; errors?: unknown };
+    };
     message?: string;
   };
   if (anyErr?.response?.data) {
@@ -209,7 +228,11 @@ function requestStatus(err: unknown): number | undefined {
 // Liefert { room, ambiguous, candidates }. "ambiguous:true" bedeutet: mehr als
 // ein Raum passt per Substring-Vergleich -> Zeile MUSS als Fehler markiert
 // werden statt automatisch (und ggf. falsch) den ersten Treffer zu nehmen.
-function resolveRoom(locationText: unknown): { room: RoomNames | null; ambiguous: boolean; candidates: RoomNames[] } {
+function resolveRoom(locationText: unknown): {
+  room: RoomNames | null;
+  ambiguous: boolean;
+  candidates: RoomNames[];
+} {
   const norm = normalize(locationText);
   if (!norm) return { room: null, ambiguous: false, candidates: [] };
 
@@ -222,10 +245,13 @@ function resolveRoom(locationText: unknown): { room: RoomNames | null; ambiguous
 
   const matches: RoomNames[] = [];
   for (const [normTitle, room] of roomsByNormalizedTitle.entries()) {
-    if (norm.includes(normTitle) || normTitle.includes(norm)) matches.push(room);
+    if (norm.includes(normTitle) || normTitle.includes(norm))
+      matches.push(room);
   }
-  if (matches.length === 1) return { room: matches[0], ambiguous: false, candidates: matches };
-  if (matches.length > 1) return { room: null, ambiguous: true, candidates: matches };
+  if (matches.length === 1)
+    return { room: matches[0], ambiguous: false, candidates: matches };
+  if (matches.length > 1)
+    return { room: null, ambiguous: true, candidates: matches };
   return { room: null, ambiguous: false, candidates: [] };
 }
 
@@ -243,9 +269,15 @@ function excelSerialToDate(serial: number): Date {
 // verwenden, verschiebt sich das Datum je nach Zeitzone des Browsers um einen Tag.
 // Nur bei Strings, die wir selbst über den lokalen Date-Konstruktor bauen
 // (parseGermanOrIsoDate), sind lokale Getter korrekt.
-function extractDateParts(dateVal: unknown): { y: number; m: number; d: number } | null {
+function extractDateParts(
+  dateVal: unknown,
+): { y: number; m: number; d: number } | null {
   if (dateVal instanceof Date) {
-    return { y: dateVal.getUTCFullYear(), m: dateVal.getUTCMonth(), d: dateVal.getUTCDate() };
+    return {
+      y: dateVal.getUTCFullYear(),
+      m: dateVal.getUTCMonth(),
+      d: dateVal.getUTCDate(),
+    };
   }
   if (typeof dateVal === 'number') {
     const d = excelSerialToDate(dateVal);
@@ -254,7 +286,11 @@ function extractDateParts(dateVal: unknown): { y: number; m: number; d: number }
   if (typeof dateVal === 'string') {
     const parsed = parseGermanOrIsoDate(dateVal);
     if (!parsed) return null;
-    return { y: parsed.getFullYear(), m: parsed.getMonth(), d: parsed.getDate() };
+    return {
+      y: parsed.getFullYear(),
+      m: parsed.getMonth(),
+      d: parsed.getDate(),
+    };
   }
   return null;
 }
@@ -299,13 +335,21 @@ function parseGermanOrIsoDate(str: string): Date | null {
     return new Date(year, parseInt(m[2], 10) - 1, parseInt(m[1], 10));
   }
   m = str.match(/^(\d{4})-(\d{2})-(\d{2})/); // ISO
-  if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+  if (m)
+    return new Date(
+      parseInt(m[1], 10),
+      parseInt(m[2], 10) - 1,
+      parseInt(m[3], 10),
+    );
   const d = new Date(str);
   return isNaN(d.getTime()) ? null : d;
 }
 
 function fmt(date: Date): string {
-  return date.toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+  return date.toLocaleString('de-DE', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  });
 }
 
 // Minuten-genauer Vergleichsschlüssel für "identisches Datum + Uhrzeit"
@@ -342,7 +386,10 @@ async function isDuplicateInBackend(start: Date): Promise<boolean> {
   const windowStart = new Date(start.getTime() - DUPLICATE_CHECK_WINDOW_MS);
   const windowEnd = new Date(start.getTime() + DUPLICATE_CHECK_WINDOW_MS);
 
-  const events = await fetchEvents(windowStart.toISOString(), windowEnd.toISOString());
+  const events = await fetchEvents(
+    windowStart.toISOString(),
+    windowEnd.toISOString(),
+  );
   const targetKey = toMinuteKey(start);
 
   return events.some((evt) => {
@@ -350,8 +397,6 @@ async function isDuplicateInBackend(start: Date): Promise<boolean> {
     return d ? toMinuteKey(d) === targetKey : false;
   });
 }
-
-
 
 // Prüft alle Zeilen (Pflichtfelder, Datum/Zeit, Raumzuordnung) OHNE etwas
 // an das Backend zu senden. Damit sieht der Nutzer vor dem eigentlichen
@@ -369,15 +414,25 @@ function validateRows(
     const rowNum = i + 2; // Zeile 1 = Header
     const row = rows[i];
 
-    const missing = REQUIRED_COLUMNS.filter((c) => row[c] === null || row[c] === undefined || row[c] === '');
+    const missing = REQUIRED_COLUMNS.filter(
+      (c) => row[c] === null || row[c] === undefined || row[c] === '',
+    );
     if (missing.length > 0) {
-      errors.push({ row: rowNum, reason: 'Fehlende Pflichtfelder: ' + missing.join(', '), data: row });
+      errors.push({
+        row: rowNum,
+        reason: 'Fehlende Pflichtfelder: ' + missing.join(', '),
+        data: row,
+      });
       continue;
     }
 
     const start = combineDateAndTime(row['Datum'], row['Uhrzeit']);
     if (!start) {
-      errors.push({ row: rowNum, reason: 'Datum/Uhrzeit konnte nicht gelesen werden.', data: row });
+      errors.push({
+        row: rowNum,
+        reason: 'Datum/Uhrzeit konnte nicht gelesen werden.',
+        data: row,
+      });
       continue;
     }
     const end = new Date(start.getTime() + 60 * 60 * 1000);
@@ -387,14 +442,24 @@ function validateRows(
       errors.push({
         row: rowNum,
         reason:
-          'Mehrdeutige Raumzuordnung für "' + (row['Veranstaltungsort'] || '') + '" (passt zu: ' +
-          roomResult.candidates.map((r) => r.title).join(', ') + ') – bitte manuell klären.',
+          'Mehrdeutige Raumzuordnung für "' +
+          (row['Veranstaltungsort'] || '') +
+          '" (passt zu: ' +
+          roomResult.candidates.map((r) => r.title).join(', ') +
+          ') – bitte manuell klären.',
         data: row,
       });
       continue;
     }
     if (!roomResult.room) {
-      errors.push({ row: rowNum, reason: 'Veranstaltungsort nicht zuordenbar: "' + (row['Veranstaltungsort'] || '') + '"', data: row });
+      errors.push({
+        row: rowNum,
+        reason:
+          'Veranstaltungsort nicht zuordenbar: "' +
+          (row['Veranstaltungsort'] || '') +
+          '"',
+        data: row,
+      });
       continue;
     }
     const room = roomResult.room;
@@ -405,7 +470,12 @@ function validateRows(
     if (seenStarts.has(startKey)) {
       skipped.push({
         row: rowNum,
-        reason: 'Übersprungen: identisches Datum/Uhrzeit (' + fmt(start) + ') wie Zeile ' + seenStarts.get(startKey) + '.',
+        reason:
+          'Übersprungen: identisches Datum/Uhrzeit (' +
+          fmt(start) +
+          ') wie Zeile ' +
+          seenStarts.get(startKey) +
+          '.',
         data: row,
       });
       continue;
@@ -416,26 +486,40 @@ function validateRows(
       row: rowNum,
       payload: {
         title: String(row['Titel']),
-        description: row['Beschreibung'] ? String(row['Beschreibung']) : undefined,
+        description: row['Beschreibung']
+          ? String(row['Beschreibung'])
+          : undefined,
         start: start.toISOString(),
         end: end.toISOString(),
         roomid: room.id,
         categoryid: catId,
       },
-      display: { title: String(row['Titel']), start, end, roomTitle: room.title },
+      display: {
+        title: String(row['Titel']),
+        start,
+        end,
+        roomTitle: room.title,
+      },
     });
   }
 
   return { valid, errors, skipped };
 }
 
-function renderResult(total: number, created: CreatedRow[], errors: RowIssue[], skipped: RowIssue[], pendingValidCount?: number) {
+function renderResult(
+  total: number,
+  created: CreatedRow[],
+  errors: RowIssue[],
+  skipped: RowIssue[],
+  pendingValidCount?: number,
+) {
   result.visible = true;
   result.total = total;
   result.created = created;
   result.errors = errors;
   result.skipped = skipped || [];
-  result.pendingValidCount = typeof pendingValidCount === 'number' ? pendingValidCount : null;
+  result.pendingValidCount =
+    typeof pendingValidCount === 'number' ? pendingValidCount : null;
 }
 
 // ─── Event-Handler ──────────────────────────────────────────────────────────
@@ -456,7 +540,10 @@ watch(categoryId, () => {
   if (pendingImport.value) {
     pendingImport.value = null;
     importPhase.value = 'idle';
-    importStatus.value = { message: 'Kategorie-ID geändert – bitte die Datei erneut prüfen.', kind: '' };
+    importStatus.value = {
+      message: 'Kategorie-ID geändert – bitte die Datei erneut prüfen.',
+      kind: '',
+    };
   }
 });
 
@@ -481,11 +568,17 @@ async function onImportButtonClick() {
   const catId = parseInt(categoryId.value, 10);
 
   if (!categoryId.value || isNaN(catId) || catId <= 0) {
-    importStatus.value = { message: 'Bitte eine gültige Standard-Kategorie-ID (> 0) eintragen.', kind: 'err' };
+    importStatus.value = {
+      message: 'Bitte eine gültige Standard-Kategorie-ID (> 0) eintragen.',
+      kind: 'err',
+    };
     return;
   }
   if (!selectedFile.value) {
-    importStatus.value = { message: 'Bitte zuerst eine .xlsx-Datei auswählen.', kind: 'err' };
+    importStatus.value = {
+      message: 'Bitte zuerst eine .xlsx-Datei auswählen.',
+      kind: 'err',
+    };
     return;
   }
 
@@ -505,8 +598,12 @@ async function onImportButtonClick() {
 
     if (workbook.SheetNames.length > 1) {
       sheetWarning.value =
-        'Hinweis: Die Datei enthält ' + workbook.SheetNames.length + ' Tabellenblätter. ' +
-        'Es wird nur das erste ("' + workbook.SheetNames[0] + '") verwendet.';
+        'Hinweis: Die Datei enthält ' +
+        workbook.SheetNames.length +
+        ' Tabellenblätter. ' +
+        'Es wird nur das erste ("' +
+        workbook.SheetNames[0] +
+        '") verwendet.';
     }
 
     const firstSheetName = workbook.SheetNames[0];
@@ -514,14 +611,20 @@ async function onImportButtonClick() {
     const rows = XLSX.utils.sheet_to_json<RawExcelRow>(sheet, { defval: null });
 
     if (rows.length === 0) {
-      importStatus.value = { message: 'Die Datei enthält keine Datenzeilen.', kind: 'err' };
+      importStatus.value = {
+        message: 'Die Datei enthält keine Datenzeilen.',
+        kind: 'err',
+      };
       importPhase.value = 'idle';
       return;
     }
     if (rows.length > MAX_ROWS) {
       importStatus.value = {
         message:
-          'Die Datei hat ' + rows.length + ' Zeilen und überschreitet das Limit von ' + MAX_ROWS +
+          'Die Datei hat ' +
+          rows.length +
+          ' Zeilen und überschreitet das Limit von ' +
+          MAX_ROWS +
           '. Bitte die Datei aufteilen und in mehreren Durchgängen importieren.',
         kind: 'err',
       };
@@ -529,7 +632,11 @@ async function onImportButtonClick() {
       return;
     }
 
-    const { valid: candidateValid, errors, skipped: fileSkipped } = validateRows(rows, catId);
+    const {
+      valid: candidateValid,
+      errors,
+      skipped: fileSkipped,
+    } = validateRows(rows, catId);
 
     let valid = candidateValid;
     let skipped = fileSkipped;
@@ -549,7 +656,10 @@ async function onImportButtonClick() {
           if (isDup) {
             backendSkipped.push({
               row: item.row,
-              reason: 'Übersprungen: Im Backend existiert bereits ein Termin mit identischem Datum/Uhrzeit (' + fmt(item.display.start) + ').',
+              reason:
+                'Übersprungen: Im Backend existiert bereits ein Termin mit identischem Datum/Uhrzeit (' +
+                fmt(item.display.start) +
+                ').',
               data: item.display,
             });
           } else {
@@ -559,7 +669,12 @@ async function onImportButtonClick() {
           // Duplikat-Check ist ein Zusatz-Schutz, kein Muss: bei Fehlern (z.B.
           // unerwartetes API-Format) wird NICHT stillschweigend weitergemacht,
           // sondern die Prüfung abgebrochen, damit keine ungeprüften Duplikate entstehen.
-          throw new Error('Duplikat-Check gegen das Backend fehlgeschlagen (Zeile ' + item.row + '): ' + describeRequestError(dupErr));
+          throw new Error(
+            'Duplikat-Check gegen das Backend fehlgeschlagen (Zeile ' +
+              item.row +
+              '): ' +
+              describeRequestError(dupErr),
+          );
         }
       }
 
@@ -572,14 +687,24 @@ async function onImportButtonClick() {
     renderResult(rows.length, [], errors, skipped, valid.length);
     importStatus.value = {
       message:
-        'Prüfung abgeschlossen: ' + valid.length + ' von ' + rows.length + ' Zeilen sind bereit, ' +
-        skipped.length + ' übersprungen (Duplikate), ' + errors.length + ' haben Fehler. ' +
+        'Prüfung abgeschlossen: ' +
+        valid.length +
+        ' von ' +
+        rows.length +
+        ' Zeilen sind bereit, ' +
+        skipped.length +
+        ' übersprungen (Duplikate), ' +
+        errors.length +
+        ' haben Fehler. ' +
         'Bitte prüfen und danach den Import bestätigen.',
       kind: valid.length > 0 ? 'ok' : 'err',
     };
     importPhase.value = 'ready';
   } catch (e) {
-    importStatus.value = { message: 'Fehler beim Lesen der Datei: ' + describeRequestError(e), kind: 'err' };
+    importStatus.value = {
+      message: 'Fehler beim Lesen der Datei: ' + describeRequestError(e),
+      kind: 'err',
+    };
     importPhase.value = 'idle';
   }
 }
@@ -598,28 +723,60 @@ async function runImport(pending: PendingImport) {
 
   for (let i = 0; i < pending.valid.length; i++) {
     if (importCancelled) {
-      importStatus.value = { message: 'Abgebrochen nach ' + i + ' von ' + pending.valid.length + ' Termin(en).', kind: 'err' };
+      importStatus.value = {
+        message:
+          'Abgebrochen nach ' +
+          i +
+          ' von ' +
+          pending.valid.length +
+          ' Termin(en).',
+        kind: 'err',
+      };
       break;
     }
 
     const item = pending.valid[i];
-    importStatus.value = { message: 'Lege Termin ' + (i + 1) + ' von ' + pending.valid.length + ' an …', kind: '' };
+    importStatus.value = {
+      message:
+        'Lege Termin ' + (i + 1) + ' von ' + pending.valid.length + ' an …',
+      kind: '',
+    };
 
     try {
       await createEvent(item.payload);
-      created.push({ row: item.row, title: item.display.title, start: item.display.start, end: item.display.end, roomTitle: item.display.roomTitle });
+      created.push({
+        row: item.row,
+        title: item.display.title,
+        start: item.display.start,
+        end: item.display.end,
+        roomTitle: item.display.roomTitle,
+      });
     } catch (err) {
       const status = requestStatus(err);
       if (status === 409) {
-        errors.push({ row: item.row, reason: 'Terminüberschneidung im Raum "' + item.display.roomTitle + '".', data: item.display });
+        errors.push({
+          row: item.row,
+          reason:
+            'Terminüberschneidung im Raum "' + item.display.roomTitle + '".',
+          data: item.display,
+        });
       } else {
-        errors.push({ row: item.row, reason: 'API-Fehler' + (status ? ' (' + status + ')' : '') + ': ' + describeRequestError(err), data: item.display });
+        errors.push({
+          row: item.row,
+          reason:
+            'API-Fehler' +
+            (status ? ' (' + status + ')' : '') +
+            ': ' +
+            describeRequestError(err),
+          data: item.display,
+        });
       }
     }
   }
 
   renderResult(pending.rows.length, created, errors, pending.skipped);
-  if (!importCancelled) importStatus.value = { message: 'Import abgeschlossen.', kind: 'ok' };
+  if (!importCancelled)
+    importStatus.value = { message: 'Import abgeschlossen.', kind: 'ok' };
 
   pendingImport.value = null;
   importPhase.value = 'idle';
@@ -633,12 +790,23 @@ async function runImport(pending: PendingImport) {
     <div class="w-100" style="max-width: 1200px">
       <h1 class="h4 mb-1">Kalender-Import aus Excel</h1>
       <p class="text-medium-emphasis mb-4">
-        Lädt Termine aus einer .xlsx-Datei (Spalten: <em>Titel, Datum, Uhrzeit, Veranstaltungsort, Beschreibung</em>) direkt in den Kalender.<br>
-        Dies ist komplett abgestimmt auf die Datei für den Termin-Import bei <a href="https://www.termine-e.de" target="_blank" rel="noopener noreferrer">www.termine-e.de</a>.
+        Lädt Termine aus einer .xlsx-Datei (Spalten:
+        <em>Titel, Datum, Uhrzeit, Veranstaltungsort, Beschreibung</em>) direkt
+        in den Kalender.<br />
+        Dies ist komplett abgestimmt auf die Datei für den Termin-Import bei
+        <a
+          href="https://www.termine-e.de"
+          target="_blank"
+          rel="noopener noreferrer"
+          >www.termine-e.de</a
+        >.
       </p>
 
       <!-- Ladeindikator (Räume) -->
-      <div v-if="loadingRooms" class="d-flex justify-content-center align-items-center p-5">
+      <div
+        v-if="loadingRooms"
+        class="d-flex justify-content-center align-items-center p-5"
+      >
         <CSpinner color="primary" />
         <span class="ms-3 text-medium-emphasis">Räume werden geladen…</span>
       </div>
@@ -659,7 +827,11 @@ async function runImport(pending: PendingImport) {
                   v-model="categoryId"
                   label="Kategorie"
                 >
-                  <option v-for="opt in CATEGORY_OPTIONS" :key="opt.id" :value="String(opt.id)">
+                  <option
+                    v-for="opt in CATEGORY_OPTIONS"
+                    :key="opt.id"
+                    :value="String(opt.id)"
+                  >
                     {{ opt.label }}
                   </option>
                 </CFormSelect>
@@ -690,15 +862,28 @@ async function runImport(pending: PendingImport) {
             <div v-if="sheetWarning" class="form-text">{{ sheetWarning }}</div>
 
             <div class="d-flex gap-2 align-items-center flex-wrap mt-3">
-              <CButton color="primary" :disabled="importBtnDisabled" @click="onImportButtonClick">
+              <CButton
+                color="primary"
+                :disabled="importBtnDisabled"
+                @click="onImportButtonClick"
+              >
                 {{ importBtnLabel }}
               </CButton>
-              <CButton v-if="showCancelBtn" color="secondary" variant="outline" @click="cancelImport">
+              <CButton
+                v-if="showCancelBtn"
+                color="secondary"
+                variant="outline"
+                @click="cancelImport"
+              >
                 Abbrechen
               </CButton>
             </div>
 
-            <CAlert v-if="importStatus.message" :color="alertColor(importStatus.kind)" class="mt-3 mb-0">
+            <CAlert
+              v-if="importStatus.message"
+              :color="alertColor(importStatus.kind)"
+              class="mt-3 mb-0"
+            >
               {{ importStatus.message }}
             </CAlert>
           </CCardBody>
@@ -710,12 +895,22 @@ async function runImport(pending: PendingImport) {
             <CModalTitle>Import bestätigen</CModalTitle>
           </CModalHeader>
           <CModalBody>
-            Es werden jetzt <strong>{{ pendingImport ? pendingImport.valid.length : 0 }}</strong> Termin(e) im Backend
-            angelegt. Fortfahren?
+            Es werden jetzt
+            <strong>{{
+              pendingImport ? pendingImport.valid.length : 0
+            }}</strong>
+            Termin(e) im Backend angelegt. Fortfahren?
           </CModalBody>
           <CModalFooter>
-            <CButton color="secondary" variant="outline" @click="showConfirmModal = false">Abbrechen</CButton>
-            <CButton color="primary" @click="confirmImport">Termine anlegen</CButton>
+            <CButton
+              color="secondary"
+              variant="outline"
+              @click="showConfirmModal = false"
+              >Abbrechen</CButton
+            >
+            <CButton color="primary" @click="confirmImport"
+              >Termine anlegen</CButton
+            >
           </CModalFooter>
         </CModal>
 
@@ -734,7 +929,9 @@ async function runImport(pending: PendingImport) {
               </CCol>
               <CCol xs="6" md="3">
                 <div class="fs-4 fw-bold">{{ result.skipped.length }}</div>
-                <div class="small text-medium-emphasis">Übersprungen (Duplikat)</div>
+                <div class="small text-medium-emphasis">
+                  Übersprungen (Duplikat)
+                </div>
               </CCol>
               <CCol xs="6" md="3">
                 <div class="fs-4 fw-bold">{{ result.errors.length }}</div>
@@ -754,7 +951,10 @@ async function runImport(pending: PendingImport) {
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  <CTableRow v-for="c in result.created" :key="'created-' + c.row">
+                  <CTableRow
+                    v-for="c in result.created"
+                    :key="'created-' + c.row"
+                  >
                     <CTableDataCell>{{ c.row }}</CTableDataCell>
                     <CTableDataCell>{{ c.title }}</CTableDataCell>
                     <CTableDataCell>{{ fmt(c.start) }}</CTableDataCell>
@@ -777,8 +977,13 @@ async function runImport(pending: PendingImport) {
                 <CTableBody>
                   <CTableRow v-for="s in result.skipped" :key="'skip-' + s.row">
                     <CTableDataCell>{{ s.row }}</CTableDataCell>
-                    <CTableDataCell><CBadge color="warning" class="me-1">Übersprungen</CBadge>{{ s.reason }}</CTableDataCell>
-                    <CTableDataCell class="small text-medium-emphasis">{{ JSON.stringify(s.data) }}</CTableDataCell>
+                    <CTableDataCell
+                      ><CBadge color="warning" class="me-1">Übersprungen</CBadge
+                      >{{ s.reason }}</CTableDataCell
+                    >
+                    <CTableDataCell class="small text-medium-emphasis">{{
+                      JSON.stringify(s.data)
+                    }}</CTableDataCell>
                   </CTableRow>
                 </CTableBody>
               </CTable>
@@ -796,8 +1001,13 @@ async function runImport(pending: PendingImport) {
                 <CTableBody>
                   <CTableRow v-for="e in result.errors" :key="'err-' + e.row">
                     <CTableDataCell>{{ e.row }}</CTableDataCell>
-                    <CTableDataCell><CBadge color="danger" class="me-1">Fehler</CBadge>{{ e.reason }}</CTableDataCell>
-                    <CTableDataCell class="small text-medium-emphasis">{{ JSON.stringify(e.data) }}</CTableDataCell>
+                    <CTableDataCell
+                      ><CBadge color="danger" class="me-1">Fehler</CBadge
+                      >{{ e.reason }}</CTableDataCell
+                    >
+                    <CTableDataCell class="small text-medium-emphasis">{{
+                      JSON.stringify(e.data)
+                    }}</CTableDataCell>
                   </CTableRow>
                 </CTableBody>
               </CTable>

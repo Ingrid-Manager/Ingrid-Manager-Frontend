@@ -1,33 +1,25 @@
 import http from '@/api/http';
 
 interface UpdateUserPayload {
-  email?: string
+  email?: string;
 
-  firstName?: string
+  firstName?: string;
 
-  lastName?: string
+  lastName?: string;
 
-  userFunction?: string | null
+  userFunction?: string | null;
 
   role?: {
-    id: number
-  }
+    id: number;
+  };
 
   status?: {
-    id: number
-  }
+    id: number;
+  };
 }
 
-export async function updateUser(
-  id: number,
-  payload: UpdateUserPayload,
-) {
-
-  const response =
-    await http.patch(
-      `/users/${id}`,
-      payload,
-    );
+export async function updateUser(id: number, payload: UpdateUserPayload) {
+  const response = await http.patch(`/users/${id}`, payload);
 
   return response.data;
 }

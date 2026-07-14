@@ -44,9 +44,9 @@ const loadError = ref('');
 
 const locations = ref<Location[]>([
   { id: 1, ahaTitle: 'Location 1', ahaUrl: '', ahaUser: '', ahaPassword: '' },
-])
+]);
 
-const selectedLocationId = ref<number>(1)
+const selectedLocationId = ref<number>(1);
 
 const selectedLocation = computed(
   () =>
@@ -65,14 +65,14 @@ function addLocation() {
     ahaUrl: '',
     ahaUser: '',
     ahaPassword: '',
-  })
-  selectedLocationId.value = newId
-  editModeLocation.value = true
+  });
+  selectedLocationId.value = newId;
+  editModeLocation.value = true;
 }
 
 function startEditLocation() {
-  locationSnapshot = { ...selectedLocation.value }
-  editModeLocation.value = true
+  locationSnapshot = { ...selectedLocation.value };
+  editModeLocation.value = true;
 }
 
 function cancelEditLocation() {
@@ -80,22 +80,22 @@ function cancelEditLocation() {
     const idx = locations.value.findIndex(
       (l) => l.id === selectedLocationId.value,
     );
-    if (idx !== -1) locations.value[idx] = { ...locationSnapshot }
+    if (idx !== -1) locations.value[idx] = { ...locationSnapshot };
   }
-  editModeLocation.value = false
+  editModeLocation.value = false;
 }
 
 function saveLocation() {
   // TODO: API-Call
-  editModeLocation.value = false
+  editModeLocation.value = false;
 }
 
 function deleteLocation() {
-  if (locations.value.length <= 1) return
+  if (locations.value.length <= 1) return;
   locations.value = locations.value.filter(
     (l) => l.id !== selectedLocationId.value,
   );
-  selectedLocationId.value = locations.value[0].id
+  selectedLocationId.value = locations.value[0].id;
 }
 
 const testStatus = ref<TestStatus>(null);
@@ -234,11 +234,15 @@ defineExpose({
 <template>
   <div class="flex-grow-1 d-flex flex-column align-items-center pt-3 pb-3">
     <div class="w-100" style="max-width: 1200px">
-
       <!-- Ladeindikator -->
-      <div v-if="loadingSettings" class="d-flex justify-content-center align-items-center p-5">
+      <div
+        v-if="loadingSettings"
+        class="d-flex justify-content-center align-items-center p-5"
+      >
         <CSpinner color="primary" />
-        <span class="ms-3 text-medium-emphasis">Einstellungen werden geladen…</span>
+        <span class="ms-3 text-medium-emphasis"
+          >Einstellungen werden geladen…</span
+        >
       </div>
 
       <!-- Fehler beim Laden -->
@@ -262,10 +266,10 @@ defineExpose({
                TAB 1 – Organisation & Ansprechpartner
           ══════════════════════════════════════════════════════════ -->
           <CTabPanel itemKey="organisation" class="p-0 pt-3">
-
             <CAlert color="info" class="small mb-4">
               <CIcon icon="cil-info" class="me-2" />
-              Diese Einstellungen werden über die Serverkonfiguration verwaltet und können hier nicht bearbeitet werden.
+              Diese Einstellungen werden über die Serverkonfiguration verwaltet
+              und können hier nicht bearbeitet werden.
             </CAlert>
 
             <!-- Organisation -->
@@ -321,7 +325,9 @@ defineExpose({
 
             <!-- Technischer Ansprechpartner -->
             <CCard class="mb-4">
-              <CCardHeader><strong>Technischer Ansprechpartner</strong></CCardHeader>
+              <CCardHeader
+                ><strong>Technischer Ansprechpartner</strong></CCardHeader
+              >
               <CCardBody>
                 <CRow>
                   <CCol md="4">
@@ -351,7 +357,6 @@ defineExpose({
                 </CRow>
               </CCardBody>
             </CCard>
-
           </CTabPanel>
 
           <!-- ══════════════════════════════════════════════════════════
@@ -359,7 +364,9 @@ defineExpose({
           ══════════════════════════════════════════════════════════ -->
           <CTabPanel itemKey="locations" class="p-0 pt-3">
             <CCard class="mb-4">
-              <CCardHeader class="d-flex justify-content-between align-items-center">
+              <CCardHeader
+                class="d-flex justify-content-between align-items-center"
+              >
                 <strong>Locations</strong>
                 <CButton color="info" size="sm" @click="addLocation">
                   + Location hinzufügen
@@ -439,8 +446,14 @@ defineExpose({
                     </CButton>
                   </template>
                   <template v-else>
-                    <CButton color="primary" @click="saveLocation">Speichern</CButton>
-                    <CButton color="secondary" variant="outline" @click="cancelEditLocation">
+                    <CButton color="primary" @click="saveLocation"
+                      >Speichern</CButton
+                    >
+                    <CButton
+                      color="secondary"
+                      variant="outline"
+                      @click="cancelEditLocation"
+                    >
                       Abbrechen
                     </CButton>
                   </template>
@@ -453,10 +466,10 @@ defineExpose({
                TAB 3 – Anwendungseinstellungen
           ══════════════════════════════════════════════════════════ -->
           <CTabPanel itemKey="app" class="p-0 pt-3">
-
             <CAlert color="info" class="small mb-4">
               <CIcon icon="cil-info" class="me-2" />
-              Diese Einstellungen werden über die Serverkonfiguration verwaltet und können hier nicht bearbeitet werden.
+              Diese Einstellungen werden über die Serverkonfiguration verwaltet
+              und können hier nicht bearbeitet werden.
             </CAlert>
 
             <CCard class="mb-4">
@@ -479,11 +492,22 @@ defineExpose({
                         style="width: 97px"
                       >
                         <option value="">TT</option>
-                        <option v-for="t in tage" :key="t" :value="t">{{ t }}</option>
+                        <option v-for="t in tage" :key="t" :value="t">
+                          {{ t }}
+                        </option>
                       </CFormSelect>
-                      <CFormSelect v-model="settings.heizperiodeStartMonat" disabled>
+                      <CFormSelect
+                        v-model="settings.heizperiodeStartMonat"
+                        disabled
+                      >
                         <option value="">Monat</option>
-                        <option v-for="m in monate" :key="m.value" :value="m.value">{{ m.label }}</option>
+                        <option
+                          v-for="m in monate"
+                          :key="m.value"
+                          :value="m.value"
+                        >
+                          {{ m.label }}
+                        </option>
                       </CFormSelect>
                     </div>
                   </CCol>
@@ -496,11 +520,22 @@ defineExpose({
                         style="width: 97px"
                       >
                         <option value="">TT</option>
-                        <option v-for="t in tage" :key="t" :value="t">{{ t }}</option>
+                        <option v-for="t in tage" :key="t" :value="t">
+                          {{ t }}
+                        </option>
                       </CFormSelect>
-                      <CFormSelect v-model="settings.heizperiodeEndeMonat" disabled>
+                      <CFormSelect
+                        v-model="settings.heizperiodeEndeMonat"
+                        disabled
+                      >
                         <option value="">Monat</option>
-                        <option v-for="m in monate" :key="m.value" :value="m.value">{{ m.label }}</option>
+                        <option
+                          v-for="m in monate"
+                          :key="m.value"
+                          :value="m.value"
+                        >
+                          {{ m.label }}
+                        </option>
                       </CFormSelect>
                     </div>
                   </CCol>
@@ -539,10 +574,18 @@ defineExpose({
                   </CCol>
                 </CRow>
                 <div class="d-flex gap-2 flex-wrap align-items-center">
-                  <CButton color="secondary" variant="outline" @click="testSmtp">
+                  <CButton
+                    color="secondary"
+                    variant="outline"
+                    @click="testSmtp"
+                  >
                     SMTP-Verbindung testen
                   </CButton>
-                  <CButton color="secondary" variant="outline" @click="sendTestMail">
+                  <CButton
+                    color="secondary"
+                    variant="outline"
+                    @click="sendTestMail"
+                  >
                     Testmail senden
                   </CButton>
                 </div>
@@ -558,7 +601,6 @@ defineExpose({
                 </CRow>
               </CCardBody>
             </CCard>
-
           </CTabPanel>
         </CTabContent>
       </CTabs>

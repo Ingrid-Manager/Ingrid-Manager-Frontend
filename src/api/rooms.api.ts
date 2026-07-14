@@ -30,7 +30,10 @@ export async function createRoom(payload: CreateRoomPayload): Promise<Room> {
   return response.data;
 }
 
-export async function updateRoom(id: number, payload: UpdateRoomPayload): Promise<Room> {
+export async function updateRoom(
+  id: number,
+  payload: UpdateRoomPayload,
+): Promise<Room> {
   const response = await http.patch(`/rooms/${id}`, payload);
   return response.data;
 }

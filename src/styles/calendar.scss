@@ -47,8 +47,6 @@
   cursor: pointer;
 }
 
-
-
 /* Tooltip */
 .calendar-tooltip {
   position: fixed;
@@ -128,7 +126,10 @@
   background-color: var(--cui-body-bg);
   overflow-y: auto;
   overflow-x: hidden;
-  transition: width 0.25s ease, min-width 0.25s ease, opacity 0.2s ease;
+  transition:
+    width 0.25s ease,
+    min-width 0.25s ease,
+    opacity 0.2s ease;
 }
 
 .room-sidebar--hidden {
@@ -248,7 +249,6 @@
   min-height: 0;
   padding: 0.1rem 0.75rem 0.75rem;
   overflow: hidden;
-  
 }
 .fc {
   --fc-bg-event-color: var(--cui-gray-400, #6c757d);
@@ -266,7 +266,7 @@
     order: 1;
   }
 
-.room-sidebar {
+  .room-sidebar {
     order: 2;
     width: 100% !important;
     min-width: 0 !important;
@@ -282,7 +282,7 @@
   .room-sidebar__list {
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
     gap: 0.25rem;
     padding: 0.4rem 0.75rem;
   }
@@ -313,21 +313,20 @@
   .fc .fc-toolbar-title {
     font-size: 1.2rem;
   }
-.calendar-list-event-description {
-  font-size: 0.8rem;
-  color: var(--cui-secondary-color, #04203f);
-  white-space: normal;
-  overflow-wrap: anywhere;
-  margin-top: 2px;
-}
-/* Background-Events (z.B. Ferien/Feiertage) ohne eigene Farbe:
+  .calendar-list-event-description {
+    font-size: 0.8rem;
+    color: var(--cui-secondary-color, #04203f);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    margin-top: 2px;
+  }
+  /* Background-Events (z.B. Ferien/Feiertage) ohne eigene Farbe:
    FullCalendar würde sonst sein Default-Grün (#8fdf82) verwenden.
    Hier auf die App-Theme-Farbe umgestellt. */
-.fc {
-  --fc-bg-event-color: var(--cui-gray-400, #6c757d);
-  --fc-bg-event-opacity: 0.3;
-}
+  .fc {
+    --fc-bg-event-color: var(--cui-gray-400, #6c757d);
+    --fc-bg-event-opacity: 0.3;
+  }
 
-
- //final close 
+  //final close
 }

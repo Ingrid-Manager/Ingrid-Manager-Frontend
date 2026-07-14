@@ -14,7 +14,7 @@ export interface SeriesEvent {
   seriesEnd: string;
 
   weekdays: number[];
-  frequency: 'WEEKLY' | 'BIWEEKLY'
+  frequency: 'WEEKLY' | 'BIWEEKLY';
 
   runDuringSchoolHolidays: boolean;
 

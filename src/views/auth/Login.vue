@@ -62,7 +62,12 @@ const submit = async () => {
                     <p class="text-body-secondary">
                       Melden Sie sich mit Ihren Zugangsdaten an.
                     </p>
-                    <CAlert v-if="error" color="danger" class="mb-3" dismissible>
+                    <CAlert
+                      v-if="error"
+                      color="danger"
+                      class="mb-3"
+                      dismissible
+                    >
                       {{ error }}
                     </CAlert>
                     <CInputGroup class="mb-3">
@@ -100,7 +105,11 @@ const submit = async () => {
                         </CButton>
                       </CCol>
                       <CCol :xs="6" class="text-right">
-                        <CButton color="link" class="px-0" @click="router.push('/auth/forgot-password')">
+                        <CButton
+                          color="link"
+                          class="px-0"
+                          @click="router.push('/auth/forgot-password')"
+                        >
                           Passwort vergessen?
                         </CButton>
                       </CCol>
@@ -111,7 +120,9 @@ const submit = async () => {
             </CCol>
             <CCol :xs="12" :md="5">
               <CCard class="text-white bg-primary py-5 h-100">
-                <CCardBody class="text-center d-flex flex-column justify-content-center">
+                <CCardBody
+                  class="text-center d-flex flex-column justify-content-center"
+                >
                   <div>
                     <h2>Registrieren</h2>
                     <p>
@@ -119,7 +130,12 @@ const submit = async () => {
                       Verwendung des Ingrid Managers von der Verwaltung
                       freigeschaltet werden!
                     </p>
-                    <CButton color="light" variant="outline" class="mt-3" @click="router.push('/auth/register')">
+                    <CButton
+                      color="light"
+                      variant="outline"
+                      class="mt-3"
+                      @click="router.push('/auth/register')"
+                    >
                       Registrieren
                     </CButton>
                   </div>

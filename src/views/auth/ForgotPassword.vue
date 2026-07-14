@@ -39,10 +39,10 @@ const submit = async () => {
                   <div v-if="success">
                     <h1>E-Mail verschickt</h1>
                     <p class="text-body-secondary">
-                      Wir haben Ihnen eine E-Mail mit einem Link zum Zurücksetzen
-                      Ihres Passworts an
-                      <strong>{{ form['forgot-password-email'] }}</strong> gesendet.
-                      Bitte prüfen Sie auch Ihren Spam-Ordner.
+                      Wir haben Ihnen eine E-Mail mit einem Link zum
+                      Zurücksetzen Ihres Passworts an
+                      <strong>{{ form['forgot-password-email'] }}</strong>
+                      gesendet. Bitte prüfen Sie auch Ihren Spam-Ordner.
                     </p>
                     <CButton
                       color="primary"
@@ -62,7 +62,12 @@ const submit = async () => {
                       Zurücksetzen Ihres Passworts.
                     </p>
 
-                    <CAlert v-if="error" color="danger" class="mb-3" dismissible>
+                    <CAlert
+                      v-if="error"
+                      color="danger"
+                      class="mb-3"
+                      dismissible
+                    >
                       {{ error }}
                     </CAlert>
 
@@ -101,7 +106,9 @@ const submit = async () => {
                           type="submit"
                           :disabled="loading"
                         >
-                          {{ loading ? 'Wird gesendet…' : 'Passwort zurücksetzen' }}
+                          {{
+                            loading ? 'Wird gesendet…' : 'Passwort zurücksetzen'
+                          }}
                         </CButton>
                       </CCol>
                       <CCol :xs="5" class="text-end">
@@ -121,7 +128,9 @@ const submit = async () => {
 
             <CCol :xs="12" :md="5">
               <CCard class="text-white bg-primary py-5 h-100">
-                <CCardBody class="text-center d-flex flex-column justify-content-center">
+                <CCardBody
+                  class="text-center d-flex flex-column justify-content-center"
+                >
                   <h2>Passwort vergessen?</h2>
                   <p>
                     Kein Problem. Geben Sie Ihren Vornamen und Ihre

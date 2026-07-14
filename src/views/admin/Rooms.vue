@@ -151,23 +151,29 @@ function roomStatusColor(room: Room): string {
 <template>
   <div class="flex-grow-1 d-flex flex-column align-items-center pt-3 pb-3">
     <div class="w-100 d-flex flex-column" style="max-width: 1200px">
-
       <!-- Fehlermeldung -->
-      <CAlert v-if="errorMessage" color="danger" class="mb-3" dismissible @close="errorMessage = ''">
+      <CAlert
+        v-if="errorMessage"
+        color="danger"
+        class="mb-3"
+        dismissible
+        @close="errorMessage = ''"
+      >
         {{ errorMessage }}
       </CAlert>
 
       <CCard class="d-flex flex-column">
         <CCardHeader class="d-flex justify-content-between align-items-center">
           <strong>Raumverwaltung</strong>
-          <CButton color="info" @click="openCreate">
-            Raum erstellen
-          </CButton>
+          <CButton color="info" @click="openCreate"> Raum erstellen </CButton>
         </CCardHeader>
 
         <CCardBody class="d-flex flex-column p-0">
           <!-- Ladezustand -->
-          <div v-if="loading" class="d-flex justify-content-center align-items-center p-5">
+          <div
+            v-if="loading"
+            class="d-flex justify-content-center align-items-center p-5"
+          >
             <CSpinner color="primary" />
             <span class="ms-3 text-medium-emphasis">Räume werden geladen…</span>
           </div>
@@ -191,9 +197,15 @@ function roomStatusColor(room: Room): string {
                   <CTableHeaderCell>Farbe</CTableHeaderCell>
                   <CTableHeaderCell>Raum</CTableHeaderCell>
                   <CTableHeaderCell>Status</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-md-table-cell">Temperaturen</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-md-table-cell">Vorlaufzeit</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-md-table-cell">Fritz!Box-ID</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-md-table-cell"
+                    >Temperaturen</CTableHeaderCell
+                  >
+                  <CTableHeaderCell class="d-none d-md-table-cell"
+                    >Vorlaufzeit</CTableHeaderCell
+                  >
+                  <CTableHeaderCell class="d-none d-md-table-cell"
+                    >Fritz!Box-ID</CTableHeaderCell
+                  >
                   <CTableHeaderCell></CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
@@ -204,7 +216,12 @@ function roomStatusColor(room: Room): string {
                   <CTableDataCell>
                     <div
                       :style="{ backgroundColor: room.color || '#3788d8' }"
-                      style="width: 20px; height: 20px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12);"
+                      style="
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 4px;
+                        border: 1px solid rgba(0, 0, 0, 0.12);
+                      "
                     />
                   </CTableDataCell>
 
@@ -236,21 +253,27 @@ function roomStatusColor(room: Room): string {
 
                   <!-- Vorlaufzeit -->
                   <CTableDataCell class="small d-none d-md-table-cell">
-                    {{ room.prelim_time != null ? `${room.prelim_time} Min.` : '—' }}
+                    {{
+                      room.prelim_time != null
+                        ? `${room.prelim_time} Min.`
+                        : '—'
+                    }}
                   </CTableDataCell>
 
                   <!-- Fritz!Box-ID -->
-                  <CTableDataCell class="small text-medium-emphasis d-none d-md-table-cell">
+                  <CTableDataCell
+                    class="small text-medium-emphasis d-none d-md-table-cell"
+                  >
                     {{ room.avm_id || '—' }}
                   </CTableDataCell>
 
                   <!-- Aktionen -->
                   <!-- Aktionen -->
                   <CTableDataCell class="text-end">
-                  <CButton color="primary" size="sm" @click="openEdit(room)">
-                  <CIcon :icon="cilPencil" class="me-md-1" />
-                  <span class="d-none d-md-inline">Bearbeiten</span>
-                  </CButton>
+                    <CButton color="primary" size="sm" @click="openEdit(room)">
+                      <CIcon :icon="cilPencil" class="me-md-1" />
+                      <span class="d-none d-md-inline">Bearbeiten</span>
+                    </CButton>
                   </CTableDataCell>
                 </CTableRow>
               </CTableBody>

@@ -39,25 +39,25 @@ Ingrid-Manager ist ein Open-Source-Frontend zur Verwaltung von Räumen, Ressourc
 
 ### Frontend
 
-| Bereich | Technologie |
-|---------|-------------|
-| Framework | Vue 3 (Composition API) |
-| Build-Tool | Vite 7 |
-| Sprache | TypeScript 5 |
-| State Management | Pinia |
-| Routing | Vue Router 4 |
-| UI-Komponenten | CoreUI Vue 5 |
-| Kalender | FullCalendar 6 |
-| HTTP-Client | Axios |
+| Bereich          | Technologie             |
+| ---------------- | ----------------------- |
+| Framework        | Vue 3 (Composition API) |
+| Build-Tool       | Vite 7                  |
+| Sprache          | TypeScript 5            |
+| State Management | Pinia                   |
+| Routing          | Vue Router 4            |
+| UI-Komponenten   | CoreUI Vue 5            |
+| Kalender         | FullCalendar 6          |
+| HTTP-Client      | Axios                   |
 
 ### Entwicklung
 
-| Bereich | Technologie |
-|---------|-------------|
-| Linting | ESLint 9 + TypeScript ESLint |
-| Formatierung | Prettier 3 |
-| Typprüfung | vue-tsc |
-| CSS | SCSS |
+| Bereich      | Technologie                  |
+| ------------ | ---------------------------- |
+| Linting      | ESLint 9 + TypeScript ESLint |
+| Formatierung | Prettier 3                   |
+| Typprüfung   | vue-tsc                      |
+| CSS          | SCSS                         |
 
 ---
 
@@ -106,15 +106,15 @@ Die Anwendung ist anschließend unter `http://localhost:4000` erreichbar.
 
 ## Verfügbare Skripte
 
-| Befehl | Beschreibung |
-|--------|--------------|
-| `npm run dev` | Entwicklungsserver starten |
-| `npm run build` | Typprüfung durchführen und für Produktion bauen |
-| `npm run preview` | Produktions-Build lokal vorschauen |
-| `npm run type-check` | TypeScript-Typprüfung ausführen |
-| `npm run lint` | ESLint ausführen |
-| `npm run lint:fix` | ESLint mit automatischer Korrektur ausführen |
-| `npm run format` | Alle Dateien mit Prettier formatieren |
+| Befehl               | Beschreibung                                    |
+| -------------------- | ----------------------------------------------- |
+| `npm run dev`        | Entwicklungsserver starten                      |
+| `npm run build`      | Typprüfung durchführen und für Produktion bauen |
+| `npm run preview`    | Produktions-Build lokal vorschauen              |
+| `npm run type-check` | TypeScript-Typprüfung ausführen                 |
+| `npm run lint`       | ESLint ausführen                                |
+| `npm run lint:fix`   | ESLint mit automatischer Korrektur ausführen    |
+| `npm run format`     | Alle Dateien mit Prettier formatieren           |
 
 ---
 
@@ -153,12 +153,12 @@ Die Authentifizierung erfolgt per JWT. Nach dem Login wird das Access Token im `
 
 ## Rollenmodell
 
-| Rolle | Berechtigungen |
-|-------|---------------|
-| `admin` | Vollzugriff auf alle Funktionen |
+| Rolle        | Berechtigungen                                  |
+| ------------ | ----------------------------------------------- |
+| `admin`      | Vollzugriff auf alle Funktionen                 |
 | `verwaltung` | Verwaltungszugriff, kann alle Termine verwalten |
-| `user` | Kann eigene Termine erstellen und bearbeiten |
-| `guest` | Nur Lesezugriff |
+| `user`       | Kann eigene Termine erstellen und bearbeiten    |
+| `guest`      | Nur Lesezugriff                                 |
 
 ---
 
@@ -212,21 +212,20 @@ npm run type-check
 
 ---
 
-
 ## Autor
+
 **Pascal045**  
 **Jonathan Hartmann**  
 🌐 [ingrid-manager.de](https://ingrid-manager.de)  
 🐙 [@Pascal045](https://github.com/Pascal045)  
-🐙 [@JonathanHartmann](https://github.com/JonathanHartmann)  
-
-
+🐙 [@JonathanHartmann](https://github.com/JonathanHartmann)
 
 ## Lizenz
 
 Dieses Projekt steht unter der **GNU Affero General Public License v3 (AGPL v3)**.
 
 Das bedeutet:
+
 - Der Quellcode ist frei einsehbar, nutzbar und veränderbar
 - Wer den Code weitergibt oder verändert, muss das Ergebnis ebenfalls unter AGPL v3 veröffentlichen
 - Wer die Software als Dienst im Netzwerk betreibt, muss den Quellcode ebenfalls öffentlich zugänglich machen
