@@ -5,6 +5,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import FullCalendar from '@fullcalendar/vue3';
 import type {
   CalendarOptions,
+  EventApi,
   EventClickArg,
   DateSelectArg,
   EventSourceFuncArg,
@@ -39,6 +40,35 @@ interface ResourceCalendarEvent {
   resourceTitle?: string;
   userId?: number;
   userName?: string;
+}
+
+// ─── Datums-Hilfsfunktion ─────────────────────────────────────────────────────
+
+function shiftDate(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().split('T')[0];
+}
+
+
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+
+function getEventDisplayDates(event: EventApi): {
+  start: string;
+  endInclusive: string;
+} {
+  const start = event.start ? toLocalDateStr(event.start) : '';
+  // event.end ist EXKLUSIV (Tag nach dem letzten gebuchten Tag).
+  const endExclusive = event.end ? toLocalDateStr(event.end) : start;
+  const endInclusive = shiftDate(endExclusive, -1);
+  return { start, endInclusive };
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -110,21 +140,29 @@ function closeModal() {
 }
 
 // ─── Speichern ────────────────────────────────────────────────────────────────
+
+function withApiTime(dateStr: string): string {
+  return `${dateStr}T02:00:00.000Z`;
+}
+
 async function onBookingSaved(payload: BookingPayload) {
   try {
+    const start = withApiTime(payload.start);
+    const end = withApiTime(payload.end ?? payload.start);
+
     if (isEditing.value && selectedEvent.value?.id) {
       await updateResourceEvent({
         id: Number(selectedEvent.value.id),
         title: payload.title,
-        start: payload.start,
-        end: payload.end ?? payload.start,
+        start,
+        end,
         resourceid: Number(payload.resource),
       });
     } else {
       await createResourceEvent({
         title: payload.title,
-        start: payload.start,
-        end: payload.end ?? payload.start,
+        start,
+        end,
         resourceid: Number(payload.resource),
       });
     }
@@ -208,24 +246,32 @@ const calendarOptions = computed<CalendarOptions>(() => ({
         fetchInfo.startStr,
         fetchInfo.endStr,
       );
-return events.map((e) => ({
-  id: String(e.id),
-  // Anzeige im Kalender: Ressourcen-Name + Beschreibung
-  title: e.resource_title
-    ? `${e.resource_title}: ${e.title}`
-    : e.title,
-  start: e.start,
-  end: e.end,
-  color: e.color,
-  extendedProps: {
-    resourceId: e.resource_id,
-    resourceTitle: e.resource_title,
-    userId: e.user_id,
-    userName: e.user_name,
-    // Ursprünglicher Titel/Beschreibung ohne Ressourcen-Name (für Bearbeiten-Modus)
-    rawTitle: e.title,
-  },
-}));
+return events.map((e) => {
+
+  const startDateOnly = e.start.split('T')[0];
+  const endDateOnly = (e.end ?? e.start).split('T')[0];
+  const endExclusive = shiftDate(endDateOnly, 1);
+
+  return {
+    id: String(e.id),
+    // Anzeige im Kalender: Ressourcen-Name + Beschreibung
+    title: e.resource_title
+      ? `${e.resource_title}: ${e.title}`
+      : e.title,
+    start: startDateOnly,
+    end: endExclusive,
+    allDay: true,
+    color: e.color,
+    extendedProps: {
+      resourceId: e.resource_id,
+      resourceTitle: e.resource_title,
+      userId: e.user_id,
+      userName: e.user_name,
+      // Ursprünglicher Titel/Beschreibung ohne Ressourcen-Name (für Bearbeiten-Modus)
+      rawTitle: e.title,
+    },
+  };
+});
     } catch (err) {
       console.error('Fehler beim Laden der Events:', err);
       return [];
@@ -234,11 +280,14 @@ return events.map((e) => ({
 
   // ─── Event klicken → bearbeiten ───────────────────────────────────────────
   eventClick: (info: EventClickArg) => {
+    const { start: startStr, endInclusive: endInclusiveStr } =
+      getEventDisplayDates(info.event);
+
     selectedEvent.value = {
       id: info.event.id,
       title: info.event.extendedProps.rawTitle ?? info.event.title,
-      start: info.event.start?.toISOString() || '',
-      end: info.event.end?.toISOString() || '',
+      start: startStr,
+      end: endInclusiveStr,
       color: info.event.backgroundColor,
       resourceId: info.event.extendedProps.resourceId,
       resourceTitle: info.event.extendedProps.resourceTitle,
@@ -246,10 +295,7 @@ return events.map((e) => ({
       userName: info.event.extendedProps.userName,
     };
     isEditing.value = true;
-    openModal({
-      start: info.event.start?.toISOString().split('T')[0],
-      end: info.event.end?.toISOString().split('T')[0],
-    });
+    openModal({ start: startStr, end: endInclusiveStr });
   },
 
   // ─── Datum auswählen → erstellen ──────────────────────────────────────────
@@ -271,18 +317,18 @@ eventMouseEnter: (info) => {
   const resourceTitle = info.event.extendedProps.resourceTitle || '';
   const userName = info.event.extendedProps.userName || '';
 
+  // "yyyy-MM-dd" -> "dd.MM.yyyy"
+  const formatDisplay = (iso: string) => {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}.${m}.${y}`;
+  };
 
-  const formatDate = (d: Date | null) =>
-    d ? d.toLocaleDateString('de-DE') : '';
+  const { start: startIso, endInclusive: endIso } =
+    getEventDisplayDates(info.event);
 
-  const start = formatDate(info.event.start);
-
-  let endDisplay = '';
-  if (info.event.end) {
-    const end = new Date(info.event.end);
-    end.setDate(end.getDate() - 1);
-    endDisplay = formatDate(end);
-  }
+  const start = formatDisplay(startIso);
+  const endDisplay = endIso !== startIso ? formatDisplay(endIso) : '';
 
   const el = document.createElement('div');
 
