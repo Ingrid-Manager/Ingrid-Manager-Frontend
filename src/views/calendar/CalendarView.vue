@@ -300,6 +300,14 @@ const calendarOptions = computed<CalendarOptions>(() => ({
         seriesId: info.event.extendedProps.seriesId,
       };
 
+      // Kann der Benutzer den Termin ohnehin nicht bearbeiten, macht die Auswahl
+      // zwischen "Nur diesen Termin" und "Alle zukünftigen Termine" keinen Sinn -
+      // stattdessen direkt die (schreibgeschützte) Serienansicht öffnen.
+      if (!canEditEvent.value) {
+        openSplitEvent();
+        return;
+      }
+
       showSeriesChoiceModal.value = true;
 
       return;

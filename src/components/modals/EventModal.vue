@@ -68,7 +68,9 @@ watch(
 
     form.value.isSeries = prefill.isSeries ?? false;
     form.value.frequency = prefill.frequency ?? 'WEEKLY';
-    form.value.endSeriesDate = prefill.endDate ?? '';
+    form.value.endSeriesDate = prefill.seriesEnd
+      ? prefill.seriesEnd.split('T')[0]
+      : '';
     form.value.runDuringSchoolHolidays =
       prefill.runDuringSchoolHolidays ?? false;
   },
@@ -174,14 +176,20 @@ function startDateFor(index: number): Date | undefined {
   return new Date(previous.value);
 }
 
+// Datum, das als "kein Enddatum" für Serien verwendet wird (Workaround,
+// bis das Backend echte unbefristete Serien unterstützt). Ist das Serienende
+// gleich diesem Sentinel-Wert, wird das Feld "Wiederholen bis zum" nicht
+// angezeigt.
+const NO_END_DATE_SENTINEL = '2050-12-31';
+
+const showEndSeriesDateField = computed(
+  () => form.value.endSeriesDate !== NO_END_DATE_SENTINEL,
+);
+
 function closeModal() {
   emit('close');
   resetForm();
 }
-
-// Datum, das als "kein Enddatum" für Serien verwendet wird (Workaround,
-// bis das Backend echte unbefristete Serien unterstützt).
-const NO_END_DATE_SENTINEL = '2050-12-31';
 
 function handleSubmit() {
   validated.value = true;
@@ -435,7 +443,7 @@ function handleDelete() {
                 <div class="series-section-label">Wiederholung</div>
 
                 <CRow class="mb-3">
-                  <CCol md="6">
+                  <CCol md="6" v-if="showEndSeriesDateField">
                     <CFormLabel>Wiederholen bis zum</CFormLabel>
                     <CFormInput
                       v-model="form.endSeriesDate"
@@ -444,7 +452,7 @@ function handleDelete() {
                     />
                   </CCol>
 
-                  <CCol md="6">
+                  <CCol :md="showEndSeriesDateField ? 6 : 12">
                     <CFormLabel>Wiederholung</CFormLabel>
                     <CFormSelect v-model="form.frequency" :disabled="!canEdit">
                       <option value="WEEKLY">Wöchentlich</option>
