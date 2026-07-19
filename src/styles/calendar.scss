@@ -26,7 +26,9 @@
 .fc-daygrid-day.fc-day-today {
   background-color: rgba(50, 31, 219, 0.06) !important;
 }
-
+.fc .fc-daygrid-day-number {
+  padding: 1px 4px;   
+}
 .fc-col-header-cell {
   background-color: var(--cui-tertiary-bg, #f8f9fa);
   font-weight: 600;
@@ -239,6 +241,9 @@
   font-size: 0.82rem;
   color: var(--cui-secondary-color, #6c757d);
 }
+  .fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 0.25em;
+}
 
 /* =============================================================================
    Kalender-Wrapper
@@ -247,12 +252,16 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding: 0.1rem 0.75rem 0.75rem;
+  padding: 0.1rem 0.75rem 0.1rem;
   overflow: hidden;
 }
 .fc {
   --fc-bg-event-color: var(--cui-gray-400, #6c757d);
   --fc-bg-event-opacity: 0.3;
+}
+.fc .fc-list-day-cushion {
+  padding: 3px 14px;
+  line-height: 0.8;
 }
 /* =============================================================================
    Mobile Layout (< 768px)
@@ -327,6 +336,13 @@
     --fc-bg-event-color: var(--cui-gray-400, #6c757d);
     --fc-bg-event-opacity: 0.3;
   }
-
+  //Abstand unter dem "custom Buttons" zum Kalender
+  .fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 0.25em;
+}
+.fc .fc-list-day-cushion {
+  padding: 3px 14px;
+  line-height: 0.8;
+}
   //final close
 }
