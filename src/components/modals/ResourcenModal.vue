@@ -224,8 +224,7 @@ function resetForm() {
               required
               :disabled="!canEdit"
               :invalid="
-                validated &&
-                !form['create-ressource-modal-description'].trim()
+                validated && !form['create-ressource-modal-description'].trim()
               "
             />
             <CFormFeedback invalid>
@@ -288,18 +287,26 @@ function resetForm() {
               :locale="de"
               :formats="{ input: 'dd.MM.yyyy' }"
               six-weeks="center"
-              :input-attrs="{ state: validated && !form['create-ressource-modal-start'] ? false : undefined }"
+              :input-attrs="{
+                state:
+                  validated && !form['create-ressource-modal-start']
+                    ? false
+                    : undefined,
+              }"
               @update:model-value="onStartChange"
             />
-            <CFormFeedback invalid :class="{ 'd-block': validated && !form['create-ressource-modal-start'] }">
+            <CFormFeedback
+              invalid
+              :class="{
+                'd-block': validated && !form['create-ressource-modal-start'],
+              }"
+            >
               Pflichtfeld.
             </CFormFeedback>
           </CCol>
 
           <CCol md="6">
-            <CFormLabel for="create-ressource-modal-end">
-              Enddatum
-            </CFormLabel>
+            <CFormLabel for="create-ressource-modal-end"> Enddatum </CFormLabel>
             <VueDatePicker
               id="create-ressource-modal-end"
               v-model="form['create-ressource-modal-end']"
@@ -313,9 +320,14 @@ function resetForm() {
               :locale="de"
               :formats="{ input: 'dd.MM.yyyy' }"
               six-weeks="center"
-              :input-attrs="{ state: validated && endDateInvalid ? false : undefined }"
+              :input-attrs="{
+                state: validated && endDateInvalid ? false : undefined,
+              }"
             />
-            <CFormFeedback invalid :class="{ 'd-block': validated && endDateInvalid }">
+            <CFormFeedback
+              invalid
+              :class="{ 'd-block': validated && endDateInvalid }"
+            >
               Das Enddatum darf nicht vor dem Startdatum liegen.
             </CFormFeedback>
           </CCol>

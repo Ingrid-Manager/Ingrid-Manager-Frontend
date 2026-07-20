@@ -27,7 +27,7 @@
   background-color: rgba(50, 31, 219, 0.06) !important;
 }
 .fc .fc-daygrid-day-number {
-  padding: 1px 4px;   
+  padding: 1px 4px;
 }
 .fc-col-header-cell {
   background-color: var(--cui-tertiary-bg, #f8f9fa);
@@ -241,7 +241,7 @@
   font-size: 0.82rem;
   color: var(--cui-secondary-color, #6c757d);
 }
-  .fc .fc-toolbar.fc-header-toolbar {
+.fc .fc-toolbar.fc-header-toolbar {
   margin-bottom: 0.25em;
 }
 
@@ -338,11 +338,11 @@
   }
   //Abstand unter dem "custom Buttons" zum Kalender
   .fc .fc-toolbar.fc-header-toolbar {
-  margin-bottom: 0.25em;
-}
-.fc .fc-list-day-cushion {
-  padding: 3px 14px;
-  line-height: 0.8;
-}
+    margin-bottom: 0.25em;
+  }
+  .fc .fc-list-day-cushion {
+    padding: 3px 14px;
+    line-height: 0.8;
+  }
   //final close
 }

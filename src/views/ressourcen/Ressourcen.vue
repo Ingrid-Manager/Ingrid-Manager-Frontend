@@ -51,14 +51,12 @@ function shiftDate(dateStr: string, days: number): string {
   return date.toISOString().split('T')[0];
 }
 
-
 function toLocalDateStr(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
-
 
 function getEventDisplayDates(event: EventApi): {
   start: string;
@@ -90,7 +88,6 @@ const isMobile = computed(() => windowWidth.value < 900);
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
 const tooltip = ref<HTMLElement | null>(null);
 
-
 function onResize() {
   windowWidth.value = window.innerWidth;
   windowHeight.value = window.innerHeight;
@@ -120,7 +117,8 @@ const canEditEvent = computed(() => {
   const user = auth.user;
   if (!user) return false;
   if (!selectedEvent.value) return user.role?.name !== 'guest';
-  if (user.role?.name === 'admin' || user.role?.name === 'verwaltung') return true;
+  if (user.role?.name === 'admin' || user.role?.name === 'verwaltung')
+    return true;
   if (user.role?.name === 'guest') return false;
   return user.id === selectedEvent.value.userId;
 });
@@ -200,7 +198,6 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   initialView: isMobile.value ? 'listMonth' : 'dayGridMonth',
 
   weekNumbers: true,
-  
 
   customButtons: {
     ressourceBuchen: {
@@ -220,7 +217,9 @@ const calendarOptions = computed<CalendarOptions>(() => ({
         right: isGuest.value ? '' : 'ressourceBuchen',
       }
     : {
-        left: isGuest.value ? 'prev,next today' : 'prev,next today ressourceBuchen',
+        left: isGuest.value
+          ? 'prev,next today'
+          : 'prev,next today ressourceBuchen',
         center: 'title',
         right: 'dayGridMonth,listMonth',
       },
@@ -246,32 +245,29 @@ const calendarOptions = computed<CalendarOptions>(() => ({
         fetchInfo.startStr,
         fetchInfo.endStr,
       );
-return events.map((e) => {
+      return events.map((e) => {
+        const startDateOnly = e.start.split('T')[0];
+        const endDateOnly = (e.end ?? e.start).split('T')[0];
+        const endExclusive = shiftDate(endDateOnly, 1);
 
-  const startDateOnly = e.start.split('T')[0];
-  const endDateOnly = (e.end ?? e.start).split('T')[0];
-  const endExclusive = shiftDate(endDateOnly, 1);
-
-  return {
-    id: String(e.id),
-    // Anzeige im Kalender: Ressourcen-Name + Beschreibung
-    title: e.resource_title
-      ? `${e.resource_title}: ${e.title}`
-      : e.title,
-    start: startDateOnly,
-    end: endExclusive,
-    allDay: true,
-    color: e.color,
-    extendedProps: {
-      resourceId: e.resource_id,
-      resourceTitle: e.resource_title,
-      userId: e.user_id,
-      userName: e.user_name,
-      // Ursprünglicher Titel/Beschreibung ohne Ressourcen-Name (für Bearbeiten-Modus)
-      rawTitle: e.title,
-    },
-  };
-});
+        return {
+          id: String(e.id),
+          // Anzeige im Kalender: Ressourcen-Name + Beschreibung
+          title: e.resource_title ? `${e.resource_title}: ${e.title}` : e.title,
+          start: startDateOnly,
+          end: endExclusive,
+          allDay: true,
+          color: e.color,
+          extendedProps: {
+            resourceId: e.resource_id,
+            resourceTitle: e.resource_title,
+            userId: e.user_id,
+            userName: e.user_name,
+            // Ursprünglicher Titel/Beschreibung ohne Ressourcen-Name (für Bearbeiten-Modus)
+            rawTitle: e.title,
+          },
+        };
+      });
     } catch (err) {
       console.error('Fehler beim Laden der Events:', err);
       return [];
@@ -311,30 +307,31 @@ return events.map((e) => {
 
     setTimeout(() => modalRef.value?.prefillDates(start, end), 0);
   },
-// ─── Tooltip beim Hover anzeigen ───────────────────────────────────────────
-eventMouseEnter: (info) => {
-  const rawTitle = info.event.extendedProps.rawTitle || info.event.title;
-  const resourceTitle = info.event.extendedProps.resourceTitle || '';
-  const userName = info.event.extendedProps.userName || '';
+  // ─── Tooltip beim Hover anzeigen ───────────────────────────────────────────
+  eventMouseEnter: (info) => {
+    const rawTitle = info.event.extendedProps.rawTitle || info.event.title;
+    const resourceTitle = info.event.extendedProps.resourceTitle || '';
+    const userName = info.event.extendedProps.userName || '';
 
-  // "yyyy-MM-dd" -> "dd.MM.yyyy"
-  const formatDisplay = (iso: string) => {
-    if (!iso) return '';
-    const [y, m, d] = iso.split('-');
-    return `${d}.${m}.${y}`;
-  };
+    // "yyyy-MM-dd" -> "dd.MM.yyyy"
+    const formatDisplay = (iso: string) => {
+      if (!iso) return '';
+      const [y, m, d] = iso.split('-');
+      return `${d}.${m}.${y}`;
+    };
 
-  const { start: startIso, endInclusive: endIso } =
-    getEventDisplayDates(info.event);
+    const { start: startIso, endInclusive: endIso } = getEventDisplayDates(
+      info.event,
+    );
 
-  const start = formatDisplay(startIso);
-  const endDisplay = endIso !== startIso ? formatDisplay(endIso) : '';
+    const start = formatDisplay(startIso);
+    const endDisplay = endIso !== startIso ? formatDisplay(endIso) : '';
 
-  const el = document.createElement('div');
+    const el = document.createElement('div');
 
-  el.className = 'calendar-tooltip';
+    el.className = 'calendar-tooltip';
 
-  const tooltipHtml = `
+    const tooltipHtml = `
   <div class="calendar-tooltip-title">
     ${rawTitle}
   </div>
@@ -349,31 +346,35 @@ eventMouseEnter: (info) => {
     ${endDisplay && endDisplay !== start ? `${start} - ${endDisplay}` : start}
   </div>
 
-  ${userName ? `
+  ${
+    userName
+      ? `
   <div class="calendar-tooltip-row">
     <strong>Erstellt von:</strong>
     ${userName}
-  </div>` : ''}
+  </div>`
+      : ''
+  }
 `;
 
-  el.innerHTML = tooltipHtml;
+    el.innerHTML = tooltipHtml;
 
-  document.body.appendChild(el);
+    document.body.appendChild(el);
 
-  const rect = info.el.getBoundingClientRect();
+    const rect = info.el.getBoundingClientRect();
 
-  el.style.top = `${rect.bottom + 8}px`;
-  el.style.left = `${rect.left}px`;
+    el.style.top = `${rect.bottom + 8}px`;
+    el.style.left = `${rect.left}px`;
 
-  tooltip.value = el;
-},
+    tooltip.value = el;
+  },
 
-eventMouseLeave: () => {
-  if (tooltip.value) {
-    tooltip.value.remove();
-    tooltip.value = null;
-  }
-},
+  eventMouseLeave: () => {
+    if (tooltip.value) {
+      tooltip.value.remove();
+      tooltip.value = null;
+    }
+  },
 }));
 
 //Tooltip Inner HTML
