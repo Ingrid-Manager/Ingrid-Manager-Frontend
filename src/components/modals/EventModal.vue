@@ -299,7 +299,7 @@ function handleDelete() {
     <CModalBody>
       <CAlert v-if="errorMessage" color="danger" class="mb-3">
         <strong>Termin konnte nicht gespeichert werden</strong>
-        <div>{{ errorMessage }}</div>
+        <div style="white-space: pre-line">{{ errorMessage }}</div>
       </CAlert>
       <CForm
         id="eventModalForm"

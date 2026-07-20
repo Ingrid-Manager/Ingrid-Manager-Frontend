@@ -172,11 +172,41 @@ async function handleSave(payload: any) {
   } catch (err: any) {
     console.error('Fehler beim Speichern:', err);
     if (err.response?.status === 409) {
-      modalError.value = err.response.data.message;
+      modalError.value = formatConflictError(err.response.data);
       return;
     }
     modalError.value = 'Der Termin konnte nicht gespeichert werden.';
   }
+}
+
+function formatConflictError(data: any): string {
+  const conflicts = Array.isArray(data?.conflicts) ? data.conflicts : [];
+  const total = data?.totalConflicts ?? conflicts.length;
+
+  const baseMessage =
+    data?.message ??
+    (total === 1
+      ? 'Der Termin kann nicht angelegt werden, da ein Konflikt mit einem bestehenden Termin im Raum besteht.'
+      : `Der Termin kann nicht angelegt werden, da ${total} Konflikte mit bestehenden Terminen im Raum bestehen.`);
+
+  if (conflicts.length === 0 || total > 5) {
+    return baseMessage;
+  }
+
+  const formatDateTime = (iso: string) => {
+    const date = new Date(iso);
+    return `${date.toLocaleDateString('de-DE')} ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  const lines = conflicts.map((c: any) => {
+    const conflictingTitles = (c.conflictingEvents ?? [])
+      .map((e: any) => e.title)
+      .join(', ');
+
+    return `• ${formatDateTime(c.start)} – ${conflictingTitles || 'belegt'}`;
+  });
+
+  return `${baseMessage}\n${lines.join('\n')}`;
 }
 
 async function handleDelete(id: string) {
