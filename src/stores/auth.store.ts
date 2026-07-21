@@ -5,6 +5,7 @@ import { User } from '@/helper/interfaces/user/User';
 
 interface LoginResponse {
   token: string;
+  refreshToken: string;
 }
 
 interface ApiErrorResponse {
@@ -29,6 +30,7 @@ export const useAuthStore = defineStore('auth', {
         const data: LoginResponse = await loginApi(email, password);
 
         localStorage.setItem('access_token', data.token);
+        localStorage.setItem('refresh_token', data.refreshToken);
 
         this.isAuthenticated = true;
         await this.fetchUser();
@@ -70,6 +72,7 @@ export const useAuthStore = defineStore('auth', {
       } catch {}
 
       localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
 
       this.user = null;
       this.isAuthenticated = false;
