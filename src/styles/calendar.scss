@@ -256,7 +256,7 @@
   overflow: hidden;
 }
 .fc {
-  --fc-bg-event-color: var(--cui-gray-400, #6c757d);
+  --fc-bg-event-color: var(--cui-gray-500, #6c757d);
   --fc-bg-event-opacity: 0.3;
 }
 .fc .fc-list-day-cushion {
@@ -333,7 +333,7 @@
    FullCalendar würde sonst sein Default-Grün (#8fdf82) verwenden.
    Hier auf die App-Theme-Farbe umgestellt. */
   .fc {
-    --fc-bg-event-color: var(--cui-gray-400, #6c757d);
+    --fc-bg-event-color: var(--cui-gray-500, #6c757d);
     --fc-bg-event-opacity: 0.3;
   }
   //Abstand unter dem "custom Buttons" zum Kalender
