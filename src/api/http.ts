@@ -1,7 +1,6 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
 
 const http = axios.create({
-  //baseURL: 'https://backend.dev.ingrid-manager.de/api/v1',
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
@@ -55,14 +54,32 @@ http.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const res = await axios.post<{ token: string }>(
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        const res = await axios.post<{
+          token: string;
+          refreshToken: string;
+        }>(
           `${import.meta.env.VITE_API_URL}/auth/refresh`,
           {},
-          { withCredentials: true },
+          {
+            headers: {
+              Authorization: `Bearer ${refreshToken}`,
+            },
+          },
         );
 
-        const newToken = res.data.token;
+        const {
+          token: newToken,
+          refreshToken: newRefreshToken,
+        } = res.data;
+
         localStorage.setItem('access_token', newToken);
+        localStorage.setItem('refresh_token', newRefreshToken);
 
         onRefreshed(newToken);
         isRefreshing = false;
@@ -73,8 +90,13 @@ http.interceptors.response.use(
 
         return http(originalRequest);
       } catch (err) {
+        isRefreshing = false;
+
         localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+
         window.location.href = '/auth/login';
+
         return Promise.reject(err);
       }
     }
