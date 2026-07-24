@@ -99,9 +99,8 @@ const submit = async () => {
                   <div v-if="success">
                     <h1>Registrierung erfolgreich</h1>
                     <p class="text-body-secondary">
-                      Ihr Konto wurde erstellt. Sie müssen von Ihrem
-                      Administrator freigeschaltet werden, bevor Sie sich
-                      anmelden können.
+                      Ihr Konto wurde erstellt. Bitte bestätige deine Mailadresse.
+                      Danach kann die Verwaltung dich freischalten.
                     </p>
                     <CButton
                       color="primary"
