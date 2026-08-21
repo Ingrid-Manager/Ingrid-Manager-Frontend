@@ -74,6 +74,19 @@ watch(
 
 //Tooltip & Event State
 const tooltip = ref<HTMLElement | null>(null);
+
+// Entfernt den Tooltip, falls vorhanden. Wird u. a. genutzt, um einen
+// "hängengebliebenen" Tooltip zu beseitigen, wenn während des Hover-Vorgangs
+// ein Neuladen der Events (z. B. durch refetchEvents) das zugehörige
+// Event-Element aus dem DOM entfernt und eventMouseLeave dadurch nicht mehr
+// zuverlässig feuert.
+const removeTooltip = () => {
+  if (tooltip.value) {
+    tooltip.value.remove();
+
+    tooltip.value = null;
+  }
+};
 const selectedEvent = ref<CalendarEvent | null>(null);
 const isEditing = ref(false);
 const auth = useAuthStore();
@@ -532,22 +545,60 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   }
 `;
 
+    // Zunächst unsichtbar einfügen, um die tatsächliche Größe messen zu können
+    el.style.visibility = 'hidden';
+
     document.body.appendChild(el);
 
     const rect = info.el.getBoundingClientRect();
 
-    el.style.top = `${rect.bottom + 8}px`;
+    const tooltipRect = el.getBoundingClientRect();
 
-    el.style.left = `${rect.left}px`;
+    const spacing = 8;
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+
+    const spaceAbove = rect.top;
+
+    // Unten anzeigen, außer es passt nicht mehr hin, aber oben genug Platz ist
+    const showAbove =
+      spaceBelow < tooltipRect.height + spacing &&
+      spaceAbove > spaceBelow;
+
+    if (showAbove) {
+      el.style.top = `${rect.top - tooltipRect.height - spacing}px`;
+    } else {
+      el.style.top = `${rect.bottom + spacing}px`;
+    }
+
+    // Horizontal innerhalb des sichtbaren Bereichs halten
+    let left = rect.left;
+
+    if (left + tooltipRect.width > window.innerWidth) {
+      left = window.innerWidth - tooltipRect.width - spacing;
+    }
+
+    if (left < spacing) {
+      left = spacing;
+    }
+
+    el.style.left = `${left}px`;
+
+    el.style.visibility = 'visible';
 
     tooltip.value = el;
   },
 
   eventMouseLeave: () => {
-    if (tooltip.value) {
-      tooltip.value.remove();
+    removeTooltip();
+  },
 
-      tooltip.value = null;
+  // Wird von FullCalendar aufgerufen, sobald das (Nach-)Laden der Events
+  // abgeschlossen ist. Falls währenddessen ein Tooltip offen war (z. B. weil
+  // der Mauszeiger noch über einem inzwischen neu gerenderten Event steht),
+  loading: (isLoading: boolean) => {
+    if (!isLoading) {
+      removeTooltip();
     }
   },
 
