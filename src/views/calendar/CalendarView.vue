@@ -17,6 +17,7 @@ import listPlugin from '@fullcalendar/list';
 
 import EventModal from '@/components/modals/EventModal.vue';
 import SeriesEventChoiceModal from '@/components/modals/SeriesEventChoiceModal.vue';
+import PrintModal from '@/components/modals/PrintModal.vue';
 import { fetchEvents } from '@/api/getCalendar';
 import { PrefillData } from '@/helper/interfaces/PrefillData';
 import { useAuthStore } from '@/stores/auth.store';
@@ -102,6 +103,35 @@ const formData = ref<PrefillData>({
 });
 
 const editMode = ref<'event' | 'split'>('event');
+
+// ─── Druck-Modal ──────────────────────────────────────────────────────────────
+const showPrintModal = ref(false);
+const printModalInitialDate = ref('');
+
+/**
+ * Formatiert ein Datum als lokales "YYYY-MM-DD" OHNE über UTC zu gehen.
+ * `date.toISOString().split('T')[0]` wäre hier ein Bug: toISOString()
+ * rechnet zuerst in UTC um. Kurz nach Mitternacht in einer Zeitzone vor
+ * UTC (z. B. Deutschland) würde das auf den VORTAG zurückfallen, und
+ * das Druck-Modal würde mit dem falschen Datum vorbelegt.
+ */
+function toLocalDateOnlyIso(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function openPrintModal() {
+  const api = calendarRef.value?.getApi();
+  const date = api?.getDate?.() ?? new Date();
+  printModalInitialDate.value = toLocalDateOnlyIso(date);
+  showPrintModal.value = true;
+}
+
+function closePrintModal() {
+  showPrintModal.value = false;
+}
 
 function openModal(prefill: PrefillData = {}) {
   formData.value = prefill;
@@ -318,6 +348,10 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       text: 'Termin erstellen',
       click: () => openModal(),
     },
+    kalenderDrucken: {
+      text: 'Drucken',
+      click: () => openPrintModal(),
+    },
   },
   eventClick: (info: EventClickArg) => {
     if (isGuest.value) {
@@ -389,7 +423,9 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     ? {
         left: 'prev,next',
         center: 'title',
-        right: isGuest.value ? '' : 'ressourceBuchen',
+        right: isGuest.value
+          ? 'kalenderDrucken'
+          : 'ressourceBuchen,kalenderDrucken',
       }
     : {
         //left: 'toggleSidebar prev,next today ressourceBuchen',
@@ -397,7 +433,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
           ? 'prev,next today'
           : 'prev,next today ressourceBuchen',
         center: 'title',
-        right: 'dayGridMonth,timeGridWeek,listMonth',
+        right: 'kalenderDrucken dayGridMonth,timeGridWeek,listMonth',
       },
   views: {
     listWeek: {
@@ -562,8 +598,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
     // Unten anzeigen, außer es passt nicht mehr hin, aber oben genug Platz ist
     const showAbove =
-      spaceBelow < tooltipRect.height + spacing &&
-      spaceAbove > spaceBelow;
+      spaceBelow < tooltipRect.height + spacing && spaceAbove > spaceBelow;
 
     if (showAbove) {
       el.style.top = `${rect.top - tooltipRect.height - spacing}px`;
@@ -686,5 +721,12 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     @close="showSeriesChoiceModal = false"
     @single="openSingleEvent"
     @split="openSplitEvent"
+  />
+
+  <PrintModal
+    :visible="showPrintModal"
+    :rooms="rooms"
+    :initial-date="printModalInitialDate"
+    @close="closePrintModal"
   />
 </template>
