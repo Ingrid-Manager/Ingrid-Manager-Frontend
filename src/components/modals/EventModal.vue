@@ -5,6 +5,7 @@ import type { CalendarEvent } from '@/helper/interfaces/calendar/CalendarEvent';
 import type { RoomNames } from '@/helper/interfaces/room/RoomNames';
 
 import { useEventForm } from '@/composables/useEventForm';
+import { useAuthStore } from '@/stores/auth.store';
 import { getRoomNames } from '@/api/getRoomNames';
 import {
   CCol,
@@ -48,6 +49,14 @@ const {
   seedFirstCustomDate,
   resetForm,
 } = useEventForm();
+
+const auth = useAuthStore();
+
+// Kategorie "Gottesdienst" darf nur von Verwaltung/Admin gesetzt werden
+const canManageCategory = computed(
+  () =>
+    auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',
+);
 
 const roomNames = ref<RoomNames[]>([]);
 
@@ -209,6 +218,9 @@ function handleSubmit() {
       ? NO_END_DATE_SENTINEL
       : form.value.endSeriesDate;
 
+  // Kategorie: "Gottesdienst" (2) nur, wenn von Verwaltung/Admin gesetzt, sonst "Standard" (1)
+  const categoryid = canManageCategory.value && form.value.isGottesdienst ? 2 : 1;
+
   // Alle Daten sammeln
   const dates: string[] = [];
 
@@ -254,7 +266,7 @@ function handleSubmit() {
         allDay: false,
         description: form.value.description.trim(),
         roomid: Number(form.value.room),
-        categoryid: 1,
+        categoryid,
         isSeries: false,
       };
     }
@@ -267,7 +279,7 @@ function handleSubmit() {
       allDay: false,
       description: form.value.description.trim(),
       roomid: Number(form.value.room),
-      categoryid: 1,
+      categoryid,
       isSeries: form.value.isSeries,
       frequency: form.value.frequency,
       endSeriesDate,
@@ -350,6 +362,18 @@ function handleDelete() {
                 {{ room.title }}
               </option>
             </CFormSelect>
+          </CCol>
+        </CRow>
+
+        <!-- Kategorie: Gottesdienst (nur für Verwaltung/Admin) -->
+        <CRow class="mb-3" v-if="canManageCategory">
+          <CCol>
+            <CFormCheck
+              id="event-modal-is-gottesdienst"
+              v-model="form.isGottesdienst"
+              label="Gottesdienst"
+              :disabled="!canEdit"
+            />
           </CCol>
         </CRow>
 
