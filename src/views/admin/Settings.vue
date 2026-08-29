@@ -98,8 +98,11 @@ function deleteLocation() {
   selectedLocationId.value = locations.value[0].id;
 }
 
-const testStatus = ref<TestStatus>(null);
-const testMessage = ref('');
+// TODO: SMTP-Verbindungstest / Testmail-Versand sind vorerst deaktiviert
+// (Backend-Endpoints dafür existieren noch nicht) und werden zu einem
+// späteren Zeitpunkt wieder aktiviert.
+// const testStatus = ref<TestStatus>(null);
+// const testMessage = ref('');
 
 const settings = ref<OrgSettings>({
   orgName: '',
@@ -138,6 +141,7 @@ onMounted(async () => {
     settings.value.techFirstName = data.techFirstName;
     settings.value.techLastName = data.techLastName;
     settings.value.techEmail = data.techEmail;
+    settings.value.smtpUser = data.smtpUser;
   } catch (err) {
     console.error('Fehler beim Laden der Einstellungen:', err);
     loadError.value =
@@ -168,62 +172,64 @@ const monate = [
 ];
 
 // ─── SMTP Actions ─────────────────────────────────────────────────────────────
+// Vorerst deaktiviert (siehe TODO bei testStatus/testMessage weiter oben) –
+// es gibt noch keine Backend-Endpoints für SMTP-Verbindungstest/Testmail.
 
-const gatherSmtpPayload = () => ({
-  host: settings.value.smtpHost,
-  port: settings.value.smtpPort,
-  user: settings.value.smtpUser,
-  pass: settings.value.smtpPass,
-});
+// const gatherSmtpPayload = () => ({
+//   host: settings.value.smtpHost,
+//   port: settings.value.smtpPort,
+//   user: settings.value.smtpUser,
+//   pass: settings.value.smtpPass,
+// });
 
-const testSmtp = async (): Promise<void> => {
-  testStatus.value = 'ok';
-  testMessage.value = 'Teste Verbindung… Bitte warten';
-  try {
-    const resp = await fetch('/api/test-smtp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(gatherSmtpPayload()),
-    });
-    const json = await resp.json().catch(() => ({ ok: resp.ok }));
-    testStatus.value = resp.ok && json?.ok ? 'ok' : 'err';
-    testMessage.value =
-      json?.message ??
-      (resp.ok ? 'SMTP-Verbindung erfolgreich' : 'Verbindung fehlgeschlagen');
-  } catch (err: unknown) {
-    testStatus.value = 'err';
-    testMessage.value =
-      'Fehler: ' + (err instanceof Error ? err.message : String(err));
-  }
-};
+// const testSmtp = async (): Promise<void> => {
+//   testStatus.value = 'ok';
+//   testMessage.value = 'Teste Verbindung… Bitte warten';
+//   try {
+//     const resp = await fetch('/api/test-smtp', {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify(gatherSmtpPayload()),
+//     });
+//     const json = await resp.json().catch(() => ({ ok: resp.ok }));
+//     testStatus.value = resp.ok && json?.ok ? 'ok' : 'err';
+//     testMessage.value =
+//       json?.message ??
+//       (resp.ok ? 'SMTP-Verbindung erfolgreich' : 'Verbindung fehlgeschlagen');
+//   } catch (err: unknown) {
+//     testStatus.value = 'err';
+//     testMessage.value =
+//       'Fehler: ' + (err instanceof Error ? err.message : String(err));
+//   }
+// };
 
-const sendTestMail = async (): Promise<void> => {
-  const to = settings.value.orgEmail || settings.value.techEmail;
-  if (!to) {
-    testStatus.value = 'err';
-    testMessage.value =
-      'Keine Empfängeradresse gefunden (Org- oder Tech-E-Mail).';
-    return;
-  }
-  testStatus.value = 'ok';
-  testMessage.value = 'Sende Testmail… Bitte warten';
-  try {
-    const resp = await fetch('/api/send-test-mail', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...gatherSmtpPayload(), to }),
-    });
-    const json = await resp.json().catch(() => ({ ok: resp.ok }));
-    testStatus.value = resp.ok && json?.ok ? 'ok' : 'err';
-    testMessage.value =
-      json?.message ??
-      (resp.ok ? 'Testmail erfolgreich gesendet' : 'Testmail fehlgeschlagen');
-  } catch (err: unknown) {
-    testStatus.value = 'err';
-    testMessage.value =
-      'Fehler: ' + (err instanceof Error ? err.message : String(err));
-  }
-};
+// const sendTestMail = async (): Promise<void> => {
+//   const to = settings.value.orgEmail || settings.value.techEmail;
+//   if (!to) {
+//     testStatus.value = 'err';
+//     testMessage.value =
+//       'Keine Empfängeradresse gefunden (Org- oder Tech-E-Mail).';
+//     return;
+//   }
+//   testStatus.value = 'ok';
+//   testMessage.value = 'Sende Testmail… Bitte warten';
+//   try {
+//     const resp = await fetch('/api/send-test-mail', {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ ...gatherSmtpPayload(), to }),
+//     });
+//     const json = await resp.json().catch(() => ({ ok: resp.ok }));
+//     testStatus.value = resp.ok && json?.ok ? 'ok' : 'err';
+//     testMessage.value =
+//       json?.message ??
+//       (resp.ok ? 'Testmail erfolgreich gesendet' : 'Testmail fehlgeschlagen');
+//   } catch (err: unknown) {
+//     testStatus.value = 'err';
+//     testMessage.value =
+//       'Fehler: ' + (err instanceof Error ? err.message : String(err));
+//   }
+// };
 
 // ─── Ressourcen Kalender ──────────────────────────────────────────────────────
 defineExpose({
@@ -573,6 +579,8 @@ defineExpose({
                     <CFormInput :value="settings.smtpUser || '—'" disabled />
                   </CCol>
                 </CRow>
+                <!-- TODO: SMTP-Verbindungstest / Testmail-Versand vorerst
+                     deaktiviert, es gibt noch keine Backend-Endpoints dafür.
                 <div class="d-flex gap-2 flex-wrap align-items-center">
                   <CButton
                     color="secondary"
@@ -599,6 +607,7 @@ defineExpose({
                     </CAlert>
                   </CCol>
                 </CRow>
+                -->
               </CCardBody>
             </CCard>
           </CTabPanel>
