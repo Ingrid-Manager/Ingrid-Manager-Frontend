@@ -107,6 +107,7 @@ onMounted(() => {
           v-if="canAccessAdmin"
           variant="nav-item"
           :popper="false"
+          alignment="end"
           class="d-flex d-md-none"
         >
           <CDropdownToggle :caret="false">
