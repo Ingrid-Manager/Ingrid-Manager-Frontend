@@ -380,6 +380,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
         userName: info.event.extendedProps.userName,
         isBackground: info.event.extendedProps.isBackground,
         seriesId: info.event.extendedProps.seriesId,
+        categoryId: info.event.extendedProps.categoryId,
       };
 
       // Kann der Benutzer den Termin ohnehin nicht bearbeiten, macht die Auswahl
@@ -409,6 +410,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       userName: info.event.extendedProps.userName,
       isBackground: info.event.extendedProps.isBackground,
       seriesId: info.event.extendedProps.seriesId,
+      categoryId: info.event.extendedProps.categoryId,
     };
 
     isEditing.value = true;
@@ -495,6 +497,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
               description: e.description,
               seriesId: e.seriesId,
               isBackground: e.isBackground,
+              categoryId: e.categoryId,
             },
           };
         });
