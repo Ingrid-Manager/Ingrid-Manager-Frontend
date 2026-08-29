@@ -101,6 +101,7 @@ watch(
     form.value.startDate = event.start?.split('T')[0] || '';
     form.value.endDate = event.end?.split('T')[0] || '';
     form.value.room = event.roomId ? String(event.roomId) : '';
+    form.value.isGottesdienst = event.categoryId === 2;
 
     if (event.start) {
       const startDate = new Date(event.start);
@@ -218,8 +219,13 @@ function handleSubmit() {
       ? NO_END_DATE_SENTINEL
       : form.value.endSeriesDate;
 
-  // Kategorie: "Gottesdienst" (2) nur, wenn von Verwaltung/Admin gesetzt, sonst "Standard" (1)
-  const categoryid = canManageCategory.value && form.value.isGottesdienst ? 2 : 1;
+  // Kategorie: nur Verwaltung/Admin dürfen sie über die Checkbox ändern.
+  // Ohne Berechtigung bleibt die bisherige Kategorie des Termins erhalten
+  // (Standard bei neuen Terminen), statt sie beim Speichern stillschweigend
+  // auf "Standard" zurückzusetzen.
+  const categoryid = canManageCategory.value
+    ? (form.value.isGottesdienst ? 2 : 1)
+    : (props.event?.categoryId ?? 1);
 
   // Alle Daten sammeln
   const dates: string[] = [];
