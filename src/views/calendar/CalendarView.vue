@@ -354,6 +354,11 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     },
   },
   eventClick: (info: EventClickArg) => {
+    // Auf Touch-Geräten löst ein Tap sowohl eventMouseEnter (Tooltip) als
+    // auch eventClick (Modal öffnen) aus; ohne echtes "Mouseleave" bleibt
+    // der Tooltip dann parallel zum Modal sichtbar stehen.
+    removeTooltip();
+
     if (isGuest.value) {
       return; // Gäste dürfen das Modal nicht öffnen
     }
