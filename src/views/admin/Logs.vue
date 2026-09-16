@@ -1,277 +1,315 @@
-<script setup>
-import { ref, computed } from 'vue';
-/* Beispiel .json Format einer Log Datei, um dann daraus die Ansicht für das Frontend zu erstellen.
-    sonst auch jedes anderes Format, was sich gut parsen lässt.
-[
-  { "timestamp": "22.03.2026 10:01:03", "level": "INFO",    "source": "AppStart",    "message": "Server gestartet auf Port 3000" },
-  { "timestamp": "22.03.2026 10:05:44", "level": "WARN",    "source": "DB",          "message": "Langsame Abfrage erkannt (1243ms)" },
-  { "timestamp": "22.03.2026 10:07:18", "level": "ERROR",   "source": "AuthService", "message": "Login fehlgeschlagen für admin@example.com" },
-  { "timestamp": "22.03.2026 10:11:00", "level": "TERMINE", "source": "DB",          "message": "Max Mustermann hat den Termin \"Chor Crescendo\" erstellt" }
-]
-*/
-const logs = ref([
-  {
-    id: 1,
-    timestamp: '22.03.2026 10:01:03',
-    level: 'ERROR',
-    source: 'DB',
-    message: 'Insert Into konnte nicht ausgeführt werden',
-  },
-  {
-    id: 2,
-    timestamp: '22.03.2026 10:01:05',
-    level: 'INFO',
-    source: 'SMTP',
-    message:
-      'Daily Info Mail "neue / gelöschte Termine" wurde an Elisa Musterfrau verschickt',
-  },
-  {
-    id: 3,
-    timestamp: '22.03.2026 10:03:12',
-    level: 'DEBUG',
-    source: 'AuthService',
-    message: 'Token validiert für user@example.com',
-  },
-  {
-    id: 4,
-    timestamp: '22.03.2026 10:05:44',
-    level: 'WARN',
-    source: 'DB',
-    message: 'Langsame Abfrage erkannt (1243ms) – SELECT * FROM orders',
-  },
-  {
-    id: 5,
-    timestamp: '22.03.2026 10:07:18',
-    level: 'ERROR',
-    source: 'AuthService',
-    message: 'Login fehlgeschlagen für admin@example.com (3 Versuche)',
-  },
-  {
-    id: 6,
-    timestamp: '22.03.2026 10:09:31',
-    level: 'INFO',
-    source: 'UserAPI',
-    message: 'Neuer Nutzer registriert: id=2041',
-  },
-  {
-    id: 7,
-    timestamp: '22.03.2026 10:11:00',
-    level: 'WARN',
-    source: 'Cache',
-    message: 'Cache Miss Rate > 40% – Überprüfung empfohlen',
-  },
-  {
-    id: 8,
-    timestamp: '22.03.2026 10:13:27',
-    level: 'ERROR',
-    source: 'PaymentSvc',
-    message: 'Zahlung abgelehnt: Timeout bei Stripe-API (Request-ID: ch_3NxAB)',
-  },
-  {
-    id: 9,
-    timestamp: '22.03.2026 10:15:02',
-    level: 'DEBUG',
-    source: 'Router',
-    message: 'GET /api/v1/products – 204ms – 200 OK',
-  },
-  {
-    id: 10,
-    timestamp: '22.03.2026 10:16:55',
-    level: 'INFO',
-    source: 'Scheduler',
-    message: 'Cron-Job cleanup_sessions abgeschlossen (gelöscht: 312)',
-  },
-  {
-    id: 11,
-    timestamp: '22.03.2026 10:18:09',
-    level: 'ERROR',
-    source: 'FileUpload',
-    message: 'Datei zu groß: 48MB (Limit: 10MB) – user_id=1772',
-  },
-  {
-    id: 12,
-    timestamp: '22.03.2026 10:19:44',
-    level: 'WARN',
-    source: 'MailSvc',
-    message: 'E-Mail-Zustellung verzögert – SMTP Queue: 58 ausstehend',
-  },
-  {
-    id: 13,
-    timestamp: '22.03.2026 10:21:30',
-    level: 'DEBUG',
-    source: 'Middleware',
-    message: 'CORS-Header gesetzt für Origin: https://app.example.com',
-  },
-  {
-    id: 14,
-    timestamp: '22.03.2026 10:23:11',
-    level: 'TERMINE',
-    source: 'DB',
-    message: 'Max Mustermann hat den Termin "Chor Crescendo" erstellt',
-  },
-]);
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
 
-const activeFilter = ref('ALL');
-const searchQuery = ref('');
+import { useAuthStore } from '@/stores/auth.store';
+import { getAuditLog } from '@/api/audit-log.api';
+import type { AuditLogEntry, AuditLogFilter } from '@/api/audit-log.api';
+import {
+  AUDIT_LOG_CATEGORIES,
+  ALL_ACTIONS,
+  actionLabel,
+  actionColor,
+  serviceLabel,
+  isCriticalEntry,
+} from '@/helper/audit-log/audit-log-meta';
+import AuditLogDetailModal from '@/components/modals/AuditLogDetailModal.vue';
 
-const levelColor = (level) => {
-  switch (level) {
-    case 'ERROR':
-      return 'danger';
-    case 'WARN':
-      return 'warning';
-    case 'INFO':
-      return 'info';
-    case 'DEBUG':
-      return 'secondary';
-    case 'TERMINE':
-      return 'success';
-    default:
-      return 'light';
+const auth = useAuthStore();
+const canAccess = computed(
+  () =>
+    auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',
+);
+
+const PAGE_SIZE = 100;
+
+const entries = ref<AuditLogEntry[]>([]);
+const page = ref(1);
+const totalPages = ref(1);
+const total = ref(0);
+const loading = ref(false);
+const errorMessage = ref('');
+
+const activeCategory = ref('');
+const actionFilter = ref('');
+const fromFilter = ref('');
+const toFilter = ref('');
+
+const detailModalVisible = ref(false);
+const selectedEntry = ref<AuditLogEntry | null>(null);
+
+async function loadPage(targetPage: number) {
+  loading.value = true;
+  errorMessage.value = '';
+
+  const category = AUDIT_LOG_CATEGORIES.find((c) => c.key === activeCategory.value);
+
+  const filter: AuditLogFilter = {
+    page: targetPage,
+    limit: PAGE_SIZE,
+    ...(category?.filterParams ?? {}),
+  };
+
+  if (actionFilter.value) {
+    filter.action = actionFilter.value;
   }
-};
+  if (fromFilter.value) {
+    filter.from = fromFilter.value;
+  }
+  if (toFilter.value) {
+    filter.to = toFilter.value;
+  }
 
-/*
-const countByLevel = (level) =>
-  logs.value.filter(l => l.level === level).length
-*/
+  try {
+    const result = await getAuditLog(filter);
+    entries.value = result.data;
+    page.value = result.page;
+    totalPages.value = Math.max(result.totalPages, 1);
+    total.value = result.total;
+  } catch (err) {
+    console.error('Fehler beim Laden des Aktivitätsprotokolls:', err);
+    errorMessage.value = 'Aktivitätsprotokoll konnte nicht geladen werden.';
+    entries.value = [];
+  } finally {
+    loading.value = false;
+  }
+}
 
-const filteredLogs = computed(() => {
-  const q = searchQuery.value.toLowerCase();
-  return logs.value.filter((l) => {
-    const matchesLevel =
-      activeFilter.value === 'ALL' || l.level === activeFilter.value;
-    const matchesSearch =
-      !q ||
-      l.message.toLowerCase().includes(q) ||
-      l.source.toLowerCase().includes(q);
-    return matchesLevel && matchesSearch;
+function goToPage(targetPage: number | 'ellipsis') {
+  if (
+    targetPage === 'ellipsis' ||
+    targetPage < 1 ||
+    targetPage > totalPages.value ||
+    targetPage === page.value
+  ) {
+    return;
+  }
+  // Nur die angeklickte Seite wird nachgeladen - keine anderen Seiten werden vorab geholt.
+  loadPage(targetPage);
+}
+
+function selectCategory(key: string) {
+  activeCategory.value = activeCategory.value === key ? '' : key;
+}
+
+// Filterwechsel setzt immer auf Seite 1 zurück und lädt neu.
+watch([activeCategory, actionFilter, fromFilter, toFilter], () => {
+  loadPage(1);
+});
+
+const visiblePages = computed(() => {
+  const totalP = totalPages.value;
+  const current = page.value;
+
+  if (totalP <= 7) {
+    return Array.from({ length: totalP }, (_, i) => i + 1);
+  }
+
+  const pages = new Set<number>([1, totalP, current]);
+  for (let offset = 1; offset <= 2; offset++) {
+    if (current - offset >= 1) pages.add(current - offset);
+    if (current + offset <= totalP) pages.add(current + offset);
+  }
+
+  return Array.from(pages).sort((a, b) => a - b);
+});
+
+/** Seitenzahlen mit 'ellipsis'-Markern für Lücken, z.B. [1, 'ellipsis', 4, 5, 6, 'ellipsis', 20]. */
+const paginationItems = computed<(number | 'ellipsis')[]>(() => {
+  const pages = visiblePages.value;
+  const items: (number | 'ellipsis')[] = [];
+
+  pages.forEach((p, idx) => {
+    if (idx > 0 && p - pages[idx - 1] > 1) {
+      items.push('ellipsis');
+    }
+    items.push(p);
   });
+
+  return items;
+});
+
+function openDetail(entry: AuditLogEntry) {
+  selectedEntry.value = entry;
+  detailModalVisible.value = true;
+}
+
+function closeDetail() {
+  detailModalVisible.value = false;
+  selectedEntry.value = null;
+}
+
+function formatTimestamp(value: string): string {
+  const date = new Date(value);
+  return `${date.toLocaleDateString('de-DE')} ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+onMounted(() => {
+  if (canAccess.value) {
+    loadPage(1);
+  }
 });
 </script>
 
 <template>
   <div class="flex-grow-1 d-flex flex-column align-items-center pt-3 pb-3">
     <div class="w-100 d-flex flex-column flex-grow-1" style="max-width: 1200px">
-      <!-- Hauptkarte mit Tabelle -->
-      <CCard class="flex-grow-1 d-flex flex-column overflow-hidden">
-        <CCardHeader
-          class="d-flex justify-content-between align-items-center flex-wrap gap-2"
+      <CAlert v-if="!canAccess" color="danger" class="mb-3">
+        Für diesen Bereich benötigst du die Rolle Admin oder Verwaltung.
+      </CAlert>
+
+      <template v-else>
+        <CAlert
+          v-if="errorMessage"
+          color="danger"
+          class="mb-3"
+          dismissible
+          @close="errorMessage = ''"
         >
-          <strong>Logs</strong>
+          {{ errorMessage }}
+        </CAlert>
 
-          <!-- Filter-Buttons -->
-          <div class="d-flex gap-1 flex-wrap align-items-center">
-            <CButtonGroup>
-              <CButton
-                size="sm"
-                color="secondary"
-                :variant="activeFilter !== 'ALL' ? 'outline' : ''"
-                @click="activeFilter = 'ALL'"
-              >
-                Alle
-              </CButton>
-              <CButton
-                size="sm"
-                color="danger"
-                :variant="activeFilter !== 'ERROR' ? 'outline' : ''"
-                @click="activeFilter = 'ERROR'"
-              >
-                ERROR
-              </CButton>
-              <CButton
-                size="sm"
-                color="warning"
-                :variant="activeFilter !== 'WARN' ? 'outline' : ''"
-                @click="activeFilter = 'WARN'"
-              >
-                WARN
-              </CButton>
-              <CButton
-                size="sm"
-                color="warning"
-                :variant="activeFilter !== 'INFO' ? 'outline' : ''"
-                @click="activeFilter = 'INFO'"
-              >
-                INFO
-              </CButton>
-              <CButton
-                size="sm"
-                color="success"
-                :variant="activeFilter !== 'TERMINE' ? 'outline' : ''"
-                @click="activeFilter = 'TERMINE'"
-              >
-                TERMINE
-              </CButton>
-              <CButton
-                size="sm"
-                color="secondary"
-                :variant="activeFilter !== 'DEBUG' ? 'outline' : ''"
-                @click="activeFilter = 'DEBUG'"
-              >
-                DEBUG
-              </CButton>
-            </CButtonGroup>
+        <CCard class="flex-grow-1 d-flex flex-column overflow-hidden">
+          <CCardHeader
+            class="d-flex justify-content-between align-items-center flex-wrap gap-2"
+          >
+            <strong>Aktivitätsprotokoll</strong>
 
-            <CFormInput
-              v-model="searchQuery"
-              size="sm"
-              placeholder="Suche…"
-              style="width: 180px"
-            />
-          </div>
-        </CCardHeader>
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+              <CButtonGroup>
+                <CButton
+                  v-for="category in AUDIT_LOG_CATEGORIES"
+                  :key="category.key"
+                  size="sm"
+                  :color="category.color"
+                  :variant="activeCategory !== category.key ? 'outline' : ''"
+                  @click="selectCategory(category.key)"
+                >
+                  {{ category.label }}
+                </CButton>
+              </CButtonGroup>
 
-        <CCardBody class="flex-grow-1 d-flex flex-column p-0 overflow-hidden">
-          <div class="flex-grow-1 overflow-auto">
-            <CTable hover class="mb-0">
-              <CTableHead>
-                <CTableRow>
-                  <CTableHeaderCell>Zeitstempel</CTableHeaderCell>
-                  <CTableHeaderCell>Level</CTableHeaderCell>
-                  <CTableHeaderCell>Service</CTableHeaderCell>
-                  <CTableHeaderCell>Nachricht</CTableHeaderCell>
-                </CTableRow>
-              </CTableHead>
+              <CFormSelect v-model="actionFilter" size="sm" style="width: 190px">
+                <option value="">Alle Aktionen</option>
+                <option v-for="action in ALL_ACTIONS" :key="action" :value="action">
+                  {{ actionLabel(action) }}
+                </option>
+              </CFormSelect>
 
-              <CTableBody>
-                <CTableRow v-if="filteredLogs.length === 0">
-                  <CTableDataCell
-                    colspan="5"
-                    class="text-center text-medium-emphasis py-4"
+              <div class="d-flex align-items-center gap-1">
+                <span class="small text-medium-emphasis">Von</span>
+                <CFormInput
+                  v-model="fromFilter"
+                  type="date"
+                  size="sm"
+                  style="width: 150px"
+                />
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <span class="small text-medium-emphasis">Bis</span>
+                <CFormInput
+                  v-model="toFilter"
+                  type="date"
+                  size="sm"
+                  style="width: 150px"
+                />
+              </div>
+            </div>
+          </CCardHeader>
+
+          <CCardBody class="flex-grow-1 d-flex flex-column p-0 overflow-hidden">
+            <div v-if="loading" class="d-flex justify-content-center align-items-center p-5">
+              <CSpinner color="primary" />
+              <span class="ms-3 text-medium-emphasis">Wird geladen…</span>
+            </div>
+
+            <div
+              v-else-if="entries.length === 0"
+              class="d-flex flex-column align-items-center justify-content-center p-5 text-medium-emphasis"
+            >
+              Keine Einträge gefunden.
+            </div>
+
+            <div v-else class="flex-grow-1 overflow-auto">
+              <CTable hover class="mb-0">
+                <CTableHead>
+                  <CTableRow>
+                    <CTableHeaderCell>Zeitpunkt</CTableHeaderCell>
+                    <CTableHeaderCell>Nutzer</CTableHeaderCell>
+                    <CTableHeaderCell>Aktion</CTableHeaderCell>
+                    <CTableHeaderCell class="d-none d-md-table-cell">Bereich</CTableHeaderCell>
+                    <CTableHeaderCell>Zusammenfassung</CTableHeaderCell>
+                  </CTableRow>
+                </CTableHead>
+
+                <CTableBody>
+                  <CTableRow
+                    v-for="entry in entries"
+                    :key="entry.id"
+                    :color="isCriticalEntry(entry.action) ? 'danger' : undefined"
+                    style="cursor: pointer"
+                    @click="openDetail(entry)"
                   >
-                    Keine Einträge gefunden.
-                  </CTableDataCell>
-                </CTableRow>
+                    <CTableDataCell>
+                      <code class="small">{{ formatTimestamp(entry.createdAt) }}</code>
+                    </CTableDataCell>
+                    <CTableDataCell class="small">
+                      {{ entry.userLabel ?? 'System' }}
+                    </CTableDataCell>
+                    <CTableDataCell>
+                      <CBadge :color="actionColor(entry.action)">
+                        {{ actionLabel(entry.action) }}
+                      </CBadge>
+                    </CTableDataCell>
+                    <CTableDataCell class="small text-medium-emphasis d-none d-md-table-cell">
+                      {{ serviceLabel(entry.service) }}
+                    </CTableDataCell>
+                    <CTableDataCell class="small">
+                      {{ entry.summary }}
+                    </CTableDataCell>
+                  </CTableRow>
+                </CTableBody>
+              </CTable>
+            </div>
+          </CCardBody>
 
-                <CTableRow v-for="log in filteredLogs" :key="log.id">
-                  <CTableDataCell>
-                    <code class="small">{{ log.timestamp }}</code>
-                  </CTableDataCell>
+          <CCardFooter
+            class="d-flex justify-content-between align-items-center flex-wrap gap-2"
+          >
+            <span class="text-medium-emphasis small">
+              {{ total }} {{ total === 1 ? 'Eintrag' : 'Einträge' }} gesamt · Seite
+              {{ page }} von {{ totalPages }}
+            </span>
 
-                  <CTableDataCell>
-                    <CBadge :color="levelColor(log.level)">
-                      {{ log.level }}
-                    </CBadge>
-                  </CTableDataCell>
-
-                  <CTableDataCell class="small text-medium-emphasis">
-                    {{ log.source }}
-                  </CTableDataCell>
-
-                  <CTableDataCell class="small">
-                    {{ log.message }}
-                  </CTableDataCell>
-                </CTableRow>
-              </CTableBody>
-            </CTable>
-          </div>
-        </CCardBody>
-
-        <CCardFooter class="text-medium-emphasis small">
-          {{ filteredLogs.length }} von {{ logs.length }} Einträgen angezeigt
-        </CCardFooter>
-      </CCard>
+            <CPagination v-if="totalPages > 1" size="sm" class="mb-0">
+              <CPaginationItem :disabled="page === 1" @click="goToPage(page - 1)">
+                Zurück
+              </CPaginationItem>
+              <template v-for="(item, idx) in paginationItems" :key="idx">
+                <CPaginationItem v-if="item === 'ellipsis'" disabled>…</CPaginationItem>
+                <CPaginationItem
+                  v-else
+                  :active="item === page"
+                  @click="goToPage(item)"
+                >
+                  {{ item }}
+                </CPaginationItem>
+              </template>
+              <CPaginationItem
+                :disabled="page === totalPages"
+                @click="goToPage(page + 1)"
+              >
+                Weiter
+              </CPaginationItem>
+            </CPagination>
+          </CCardFooter>
+        </CCard>
+      </template>
     </div>
+
+    <AuditLogDetailModal
+      :visible="detailModalVisible"
+      :entry="selectedEntry"
+      @close="closeDetail"
+    />
   </div>
 </template>
