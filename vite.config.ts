@@ -4,7 +4,7 @@ import path from 'node:path';
 import autoprefixer from 'autoprefixer';
 import pkg from './package.json';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   return {
     plugins: [vue()],
     base: '/',
@@ -42,7 +42,8 @@ export default defineConfig(() => {
       port: 4000,
     },
     build: {
-      sourcemap: true,
+      // Keine öffentlich erreichbaren Sourcemaps im Produktions-Build.
+      sourcemap: mode !== 'production',
     },
   };
 });

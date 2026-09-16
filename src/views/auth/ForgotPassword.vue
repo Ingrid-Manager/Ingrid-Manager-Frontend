@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import type { AxiosError } from 'axios';
+import { resetPassword } from '@/api/users/postForgotPassword';
 
 const router = useRouter();
 
@@ -22,7 +24,20 @@ watch(
 );
 
 const submit = async () => {
-  //ToDo
+  loading.value = true;
+  error.value = '';
+
+  try {
+    await resetPassword({ email: form.value['forgot-password-email'] });
+    success.value = true;
+  } catch (err) {
+    const axiosError = err as AxiosError<{ message?: string }>;
+    error.value =
+      axiosError.response?.data?.message ||
+      'Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es später erneut.';
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 

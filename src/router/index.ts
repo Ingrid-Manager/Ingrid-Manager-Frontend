@@ -61,6 +61,7 @@ const routes: RouteRecordRaw[] = [
     path: '/admin',
     component: DefaultLayout,
     redirect: '/admin/users',
+    meta: { roles: ['admin', 'verwaltung'] },
     children: [
       {
         path: 'users',
@@ -157,6 +158,18 @@ router.beforeEach(async (to, from, next) => {
 
   // Bereits eingeloggt
   if (isLoggedIn && isAuthRoute) {
+    return next('/dashboard');
+  }
+
+  // Rollenbasierte Absicherung (z. B. für /admin/*)
+  const requiredRoles = to.matched.flatMap(
+    (record) => (record.meta?.roles as string[] | undefined) ?? [],
+  );
+
+  if (
+    requiredRoles.length > 0 &&
+    !requiredRoles.includes(auth.user?.role?.name ?? '')
+  ) {
     return next('/dashboard');
   }
 

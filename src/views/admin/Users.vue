@@ -118,10 +118,6 @@ async function onSave(payload: any) {
   }
 }
 
-function onDelete(user: UserListItem) {
-  setRole(user, 'Blocked');
-}
-
 async function onResetPassword(email: string) {
   try {
     await resetPassword({ email: email });
@@ -234,7 +230,6 @@ async function onResetPassword(email: string) {
       :user="targetUser"
       @save="onSave"
       @cancel="onCancel"
-      @delete="onDelete"
       @reset-password="onResetPassword"
     />
   </div>
