@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppHeader from '@/components/AppHeader.vue';
-console.log('✅ CalenderView geladen'); // Debug – danach entfernen
 </script>
 
 <template>

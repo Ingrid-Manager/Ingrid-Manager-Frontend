@@ -88,6 +88,7 @@ const removeTooltip = () => {
     tooltip.value = null;
   }
 };
+onUnmounted(removeTooltip);
 const selectedEvent = ref<CalendarEvent | null>(null);
 const isEditing = ref(false);
 const auth = useAuthStore();
@@ -394,8 +395,8 @@ const calendarOptions = computed<CalendarOptions>(() => ({
       id: info.event.id,
       title: info.event.title,
       description: info.event.extendedProps.description,
-      start: info.event.start?.toISOString() || '',
-      end: info.event.end?.toISOString() || '',
+      start: info.event.startStr || '',
+      end: info.event.endStr || '',
       allDay: info.event.allDay,
       color: info.event.backgroundColor,
       roomId: info.event.extendedProps.roomId,
@@ -549,37 +550,36 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
     el.className = 'calendar-tooltip';
 
-    el.innerHTML = `
-  <div class="calendar-tooltip-title">
-    ${info.event.title}
-  </div>
+    const titleEl = document.createElement('div');
+    titleEl.className = 'calendar-tooltip-title';
+    titleEl.textContent = info.event.title;
+    el.appendChild(titleEl);
 
-  <div class="calendar-tooltip-row">
-    <strong>Zeit:</strong>
-    ${start} - ${end}
-  </div>
+    const addRow = (label: string, value: string) => {
+      const row = document.createElement('div');
+      row.className = 'calendar-tooltip-row';
 
-  <div class="calendar-tooltip-row">
-    <strong>Raum:</strong>
-    ${room}
-  </div>
+      const strong = document.createElement('strong');
+      strong.textContent = `${label}:`;
+      row.appendChild(strong);
+      row.appendChild(document.createTextNode(` ${value}`));
 
-  ${
-    userName
-      ? `
-  <div class="calendar-tooltip-row">
-    <strong>Erstellt von:</strong>
-    ${userName}
-  </div>`
-      : ''
-  }
+      el.appendChild(row);
+    };
 
-  ${
-    description
-      ? `<div class="calendar-tooltip-description">${description}</div>`
-      : ''
-  }
-`;
+    addRow('Zeit', `${start} - ${end}`);
+    addRow('Raum', room);
+
+    if (userName) {
+      addRow('Erstellt von', userName);
+    }
+
+    if (description) {
+      const descriptionEl = document.createElement('div');
+      descriptionEl.className = 'calendar-tooltip-description';
+      descriptionEl.textContent = description;
+      el.appendChild(descriptionEl);
+    }
 
     // Zunächst unsichtbar einfügen, um die tatsächliche Größe messen zu können
     el.style.visibility = 'hidden';

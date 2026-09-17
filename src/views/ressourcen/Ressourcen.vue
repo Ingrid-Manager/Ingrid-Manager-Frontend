@@ -88,6 +88,13 @@ const isMobile = computed(() => windowWidth.value < 900);
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
 const tooltip = ref<HTMLElement | null>(null);
 
+const removeTooltip = () => {
+  if (tooltip.value) {
+    tooltip.value.remove();
+    tooltip.value = null;
+  }
+};
+
 function onResize() {
   windowWidth.value = window.innerWidth;
   windowHeight.value = window.innerHeight;
@@ -95,6 +102,7 @@ function onResize() {
 
 onMounted(() => window.addEventListener('resize', onResize));
 onUnmounted(() => window.removeEventListener('resize', onResize));
+onUnmounted(removeTooltip);
 
 const calendarSizing = computed(() => {
   const isDesktop = windowWidth.value >= 992;
@@ -331,33 +339,32 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
     el.className = 'calendar-tooltip';
 
-    const tooltipHtml = `
-  <div class="calendar-tooltip-title">
-    ${rawTitle}
-  </div>
+    const titleEl = document.createElement('div');
+    titleEl.className = 'calendar-tooltip-title';
+    titleEl.textContent = rawTitle;
+    el.appendChild(titleEl);
 
-  <div class="calendar-tooltip-row">
-    <strong>Ressource:</strong>
-    ${resourceTitle}
-  </div>
+    const addRow = (label: string, value: string) => {
+      const row = document.createElement('div');
+      row.className = 'calendar-tooltip-row';
 
-  <div class="calendar-tooltip-row">
-    <strong>Datum:</strong>
-    ${endDisplay && endDisplay !== start ? `${start} - ${endDisplay}` : start}
-  </div>
+      const strong = document.createElement('strong');
+      strong.textContent = `${label}:`;
+      row.appendChild(strong);
+      row.appendChild(document.createTextNode(` ${value}`));
 
-  ${
-    userName
-      ? `
-  <div class="calendar-tooltip-row">
-    <strong>Erstellt von:</strong>
-    ${userName}
-  </div>`
-      : ''
-  }
-`;
+      el.appendChild(row);
+    };
 
-    el.innerHTML = tooltipHtml;
+    addRow('Ressource', resourceTitle);
+    addRow(
+      'Datum',
+      endDisplay && endDisplay !== start ? `${start} - ${endDisplay}` : start,
+    );
+
+    if (userName) {
+      addRow('Erstellt von', userName);
+    }
 
     document.body.appendChild(el);
 
@@ -370,14 +377,15 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   },
 
   eventMouseLeave: () => {
-    if (tooltip.value) {
-      tooltip.value.remove();
-      tooltip.value = null;
+    removeTooltip();
+  },
+
+  loading: (isLoading: boolean) => {
+    if (!isLoading) {
+      removeTooltip();
     }
   },
 }));
-
-//Tooltip Inner HTML
 </script>
 
 <template>

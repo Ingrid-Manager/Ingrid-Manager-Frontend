@@ -4,5 +4,4 @@ import http from '@/api/http';
 
 export async function deleteCalendarEvent(id: number) {
   await http.delete(`calendar-events/${id}`);
-  console.log('test');
 }
