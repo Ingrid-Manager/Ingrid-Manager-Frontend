@@ -11,6 +11,8 @@ import type { SeriesEvent } from '@/helper/interfaces/series/SeriesEvent';
 
 type TransferMode = 'series' | 'event';
 
+const activeTab = ref<string>('ownership');
+
 const users = ref<UserListItem[]>([]);
 const usersLoading = ref(false);
 
@@ -204,178 +206,210 @@ async function confirmTransfer() {
         erfasst.
       </CAlert>
 
-      <!-- ── Besitzer übertragen ─────────────────────────────────────────── -->
-      <CCard class="mb-4">
-        <CCardHeader>
-          <strong>Besitzer übertragen</strong>
-        </CCardHeader>
+      <CTabs
+        :activeItemKey="activeTab"
+        @activeItemKeyChange="activeTab = $event"
+      >
+        <CTabList variant="tabs">
+          <CTab itemKey="ownership">Besitzer übertragen</CTab>
+          <CTab itemKey="reorg">Reorg Service</CTab>
+        </CTabList>
 
-        <CCardBody>
-          <div class="mb-3">
-            <CFormLabel>Was soll übertragen werden?</CFormLabel>
-            <div class="btn-group w-100" role="group">
-              <input
-                type="radio"
-                class="btn-check"
-                id="transfer-mode-series"
-                value="series"
-                v-model="mode"
-                autocomplete="off"
-              />
-              <label class="btn btn-outline-primary" for="transfer-mode-series"
-                >Serientermin (inkl. aller Einzeltermine)</label
-              >
+        <CTabContent>
+          <!-- ══════════════════════════════════════════════════════════
+               TAB 1 – Besitzer übertragen
+          ══════════════════════════════════════════════════════════ -->
+          <CTabPanel itemKey="ownership" class="p-0 pt-3">
+            <CCard class="mb-4">
+              <CCardHeader>
+                <strong>Besitzer übertragen</strong>
+              </CCardHeader>
 
-              <input
-                type="radio"
-                class="btn-check"
-                id="transfer-mode-event"
-                value="event"
-                v-model="mode"
-                autocomplete="off"
-              />
-              <label class="btn btn-outline-primary" for="transfer-mode-event"
-                >Einzelner Termin</label
-              >
-            </div>
-            <div v-if="mode === 'event'" class="form-text">
-              Nur für Termine, die <strong>keiner Serie</strong> angehören.
-              Gehört der Termin zu einer Serie, muss die gesamte Serie
-              übertragen werden.
-            </div>
-          </div>
+              <CCardBody>
+                <div class="mb-3">
+                  <CFormLabel>Was soll übertragen werden?</CFormLabel>
+                  <div class="btn-group w-100" role="group">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      id="transfer-mode-series"
+                      value="series"
+                      v-model="mode"
+                      autocomplete="off"
+                    />
+                    <label
+                      class="btn btn-outline-primary"
+                      for="transfer-mode-series"
+                      >Serientermin (inkl. aller Einzeltermine)</label
+                    >
 
-          <div class="mb-3">
-            <CFormInput
-              id="transfer-target-id"
-              v-model.number="targetId"
-              type="number"
-              min="1"
-              :label="targetIdLabel"
-            />
-          </div>
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      id="transfer-mode-event"
+                      value="event"
+                      v-model="mode"
+                      autocomplete="off"
+                    />
+                    <label
+                      class="btn btn-outline-primary"
+                      for="transfer-mode-event"
+                      >Einzelner Termin</label
+                    >
+                  </div>
+                  <div v-if="mode === 'event'" class="form-text">
+                    Nur für Termine, die <strong>keiner Serie</strong>
+                    angehören. Gehört der Termin zu einer Serie, muss die
+                    gesamte Serie übertragen werden.
+                  </div>
+                </div>
 
-          <div class="mb-3">
-            <CFormLabel>Neuer Besitzer</CFormLabel>
-            <CFormSelect v-model.number="newOwnerId" :disabled="usersLoading">
-              <option :value="null">Bitte wählen</option>
-              <option v-for="user in users" :key="user.id" :value="user.id">
-                {{ userLabel(user) }}
-              </option>
-            </CFormSelect>
-          </div>
+                <div class="mb-3">
+                  <CFormInput
+                    id="transfer-target-id"
+                    v-model.number="targetId"
+                    type="number"
+                    min="1"
+                    :label="targetIdLabel"
+                  />
+                </div>
 
-          <CAlert v-if="errorMessage" color="danger" class="mb-3">
-            {{ errorMessage }}
-          </CAlert>
-          <CAlert v-if="successMessage" color="success" class="mb-3">
-            {{ successMessage }}
-          </CAlert>
+                <div class="mb-3">
+                  <CFormLabel>Neuer Besitzer</CFormLabel>
+                  <CFormSelect
+                    v-model.number="newOwnerId"
+                    :disabled="usersLoading"
+                  >
+                    <option :value="null">Bitte wählen</option>
+                    <option
+                      v-for="user in users"
+                      :key="user.id"
+                      :value="user.id"
+                    >
+                      {{ userLabel(user) }}
+                    </option>
+                  </CFormSelect>
+                </div>
 
-          <CButton
-            color="primary"
-            :disabled="!canSubmit || loading"
-            @click="openConfirm"
-          >
-            <CSpinner v-if="loading" size="sm" class="me-2" />
-            {{ loading ? 'Wird übertragen…' : 'Besitzer übertragen' }}
-          </CButton>
-        </CCardBody>
-      </CCard>
+                <CAlert v-if="errorMessage" color="danger" class="mb-3">
+                  {{ errorMessage }}
+                </CAlert>
+                <CAlert v-if="successMessage" color="success" class="mb-3">
+                  {{ successMessage }}
+                </CAlert>
 
-      <!-- ── Reorg Service ───────────────────────────────────────────────── -->
-      <CCard class="mb-4">
-        <CCardHeader>
-          <strong>Reorg Service</strong>
-        </CCardHeader>
+                <CButton
+                  color="primary"
+                  :disabled="!canSubmit || loading"
+                  @click="openConfirm"
+                >
+                  <CSpinner v-if="loading" size="sm" class="me-2" />
+                  {{ loading ? 'Wird übertragen…' : 'Besitzer übertragen' }}
+                </CButton>
+              </CCardBody>
+            </CCard>
+          </CTabPanel>
 
-        <CCardBody>
-          <CAlert v-if="reorgError" color="danger" class="mb-3">
-            {{ reorgError }}
-          </CAlert>
-          <CAlert v-if="reorgSuccessMessage" color="success" class="mb-3">
-            {{ reorgSuccessMessage }}
-          </CAlert>
+          <!-- ══════════════════════════════════════════════════════════
+               TAB 2 – Reorg Service
+          ══════════════════════════════════════════════════════════ -->
+          <CTabPanel itemKey="reorg" class="p-0 pt-3">
+            <CCard class="mb-4">
+              <CCardHeader>
+                <strong>Reorg Service</strong>
+              </CCardHeader>
 
-          <CButton
-            color="primary"
-            class="mb-4"
-            :disabled="reorgRunning"
-            @click="startReorg"
-          >
-            <CSpinner v-if="reorgRunning" size="sm" class="me-2" />
-            {{ reorgRunning ? 'Reorg läuft…' : 'Reorg Starten' }}
-          </CButton>
+              <CCardBody>
+                <CAlert v-if="reorgError" color="danger" class="mb-3">
+                  {{ reorgError }}
+                </CAlert>
+                <CAlert v-if="reorgSuccessMessage" color="success" class="mb-3">
+                  {{ reorgSuccessMessage }}
+                </CAlert>
 
-          <!-- Serientermine -->
-          <div class="mb-2 d-flex justify-content-between align-items-center">
-            <CFormLabel class="mb-0">Serientermine</CFormLabel>
-            <span class="text-muted small">{{ seriesEvents.length }}</span>
-          </div>
-          <CAlert v-if="seriesEventsError" color="danger" class="mb-3">
-            {{ seriesEventsError }}
-          </CAlert>
-          <div v-else class="reorg-list mb-4">
-            <div
-              v-if="seriesEventsLoading"
-              class="d-flex justify-content-center py-3"
-            >
-              <CSpinner size="sm" color="primary" />
-            </div>
-            <template v-else>
-              <div
-                v-for="series in seriesEvents"
-                :key="series.id"
-                class="reorg-list__item"
-              >
-                <span class="text-muted small">#{{ series.id }}</span>
-                <span class="flex-grow-1">{{ series.title }}</span>
-                <CBadge :color="series.active ? 'success' : 'secondary'">
-                  {{ series.active ? 'Aktiv' : 'Inaktiv' }}
-                </CBadge>
-              </div>
-              <p v-if="seriesEvents.length === 0" class="text-muted mb-0">
-                Keine Serientermine gefunden.
-              </p>
-            </template>
-          </div>
+                <CButton
+                  color="primary"
+                  class="mb-4"
+                  :disabled="reorgRunning"
+                  @click="startReorg"
+                >
+                  <CSpinner v-if="reorgRunning" size="sm" class="me-2" />
+                  {{ reorgRunning ? 'Reorg läuft…' : 'Reorg Starten' }}
+                </CButton>
 
-          <!-- Ferien -->
-          <div class="mb-2 d-flex justify-content-between align-items-center">
-            <CFormLabel class="mb-0">Ferien &amp; Feiertage</CFormLabel>
-            <span class="text-muted small">{{ holidays.length }}</span>
-          </div>
-          <CAlert v-if="holidaysError" color="danger" class="mb-0">
-            {{ holidaysError }}
-          </CAlert>
-          <div v-else class="reorg-list">
-            <div
-              v-if="holidaysLoading"
-              class="d-flex justify-content-center py-3"
-            >
-              <CSpinner size="sm" color="primary" />
-            </div>
-            <template v-else>
-              <div
-                v-for="holiday in holidays"
-                :key="holiday.id"
-                class="reorg-list__item"
-              >
-                <span class="text-muted small">#{{ holiday.id }}</span>
-                <span class="flex-grow-1">{{ holiday.title }}</span>
-                <span class="small text-muted">
-                  {{ formatDate(holiday.start) }} – {{ formatDate(holiday.end) }}
-                </span>
-              </div>
-              <p v-if="holidays.length === 0" class="text-muted mb-0">
-                Keine Ferien/Feiertage gefunden.
-              </p>
-            </template>
-          </div>
-        </CCardBody>
-      </CCard>
+                <!-- Serientermine -->
+                <div class="mb-2 d-flex justify-content-between align-items-center">
+                  <CFormLabel class="mb-0">Serientermine</CFormLabel>
+                  <span class="text-muted small">{{ seriesEvents.length }}</span>
+                </div>
+                <CAlert v-if="seriesEventsError" color="danger" class="mb-3">
+                  {{ seriesEventsError }}
+                </CAlert>
+                <div v-else class="reorg-list mb-4">
+                  <div
+                    v-if="seriesEventsLoading"
+                    class="d-flex justify-content-center py-3"
+                  >
+                    <CSpinner size="sm" color="primary" />
+                  </div>
+                  <template v-else>
+                    <div
+                      v-for="series in seriesEvents"
+                      :key="series.id"
+                      class="reorg-list__item"
+                    >
+                      <span class="text-muted small">#{{ series.id }}</span>
+                      <span class="flex-grow-1">{{ series.title }}</span>
+                      <CBadge :color="series.active ? 'success' : 'secondary'">
+                        {{ series.active ? 'Aktiv' : 'Inaktiv' }}
+                      </CBadge>
+                    </div>
+                    <p v-if="seriesEvents.length === 0" class="text-muted mb-0">
+                      Keine Serientermine gefunden.
+                    </p>
+                  </template>
+                </div>
 
-      <!-- Weitere Admin-Funktionen werden hier als eigene CCard ergänzt. -->
+                <!-- Ferien -->
+                <div class="mb-2 d-flex justify-content-between align-items-center">
+                  <CFormLabel class="mb-0">Ferien &amp; Feiertage</CFormLabel>
+                  <span class="text-muted small">{{ holidays.length }}</span>
+                </div>
+                <CAlert v-if="holidaysError" color="danger" class="mb-0">
+                  {{ holidaysError }}
+                </CAlert>
+                <div v-else class="reorg-list">
+                  <div
+                    v-if="holidaysLoading"
+                    class="d-flex justify-content-center py-3"
+                  >
+                    <CSpinner size="sm" color="primary" />
+                  </div>
+                  <template v-else>
+                    <div
+                      v-for="holiday in holidays"
+                      :key="holiday.id"
+                      class="reorg-list__item"
+                    >
+                      <span class="text-muted small">#{{ holiday.id }}</span>
+                      <span class="flex-grow-1">{{ holiday.title }}</span>
+                      <span class="small text-muted">
+                        {{ formatDate(holiday.start) }} –
+                        {{ formatDate(holiday.end) }}
+                      </span>
+                    </div>
+                    <p v-if="holidays.length === 0" class="text-muted mb-0">
+                      Keine Ferien/Feiertage gefunden.
+                    </p>
+                  </template>
+                </div>
+              </CCardBody>
+            </CCard>
+          </CTabPanel>
+
+          <!-- Weitere Admin-Funktionen werden hier als eigener CTab + CTabPanel ergänzt. -->
+        </CTabContent>
+      </CTabs>
     </div>
 
     <!-- Bestätigungs-Dialog: keine Änderung ohne expliziten zweiten Schritt -->
