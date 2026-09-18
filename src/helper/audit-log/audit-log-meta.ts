@@ -109,3 +109,48 @@ export function actionColor(action: string): string {
   if (action === 'USER_ACTIVATED') return 'success';
   return 'secondary';
 }
+
+export interface ParsedUserAgent {
+  browser: string;
+  os: string;
+  deviceType: 'Desktop' | 'Tablet' | 'Mobil';
+}
+
+/**
+ * Grober User-Agent-Parser ohne externe Abhängigkeit. Deckt die gängigen
+ * Browser/Betriebssysteme ab, die im UA-String der Client-Requests
+ * auftauchen - für exotischere/ältere UAs bleibt "Unbekannt" als Fallback.
+ */
+export function parseUserAgent(userAgent: string): ParsedUserAgent {
+  const ua = userAgent;
+
+  let browser = 'Unbekannt';
+  if (/Edg\//.test(ua)) {
+    browser = `Edge ${ua.match(/Edg\/([\d.]+)/)?.[1] ?? ''}`.trim();
+  } else if (/OPR\/|Opera/.test(ua)) {
+    browser = `Opera ${ua.match(/(?:OPR|Opera)\/([\d.]+)/)?.[1] ?? ''}`.trim();
+  } else if (/Firefox\//.test(ua)) {
+    browser = `Firefox ${ua.match(/Firefox\/([\d.]+)/)?.[1] ?? ''}`.trim();
+  } else if (/Chrome\//.test(ua)) {
+    browser = `Chrome ${ua.match(/Chrome\/([\d.]+)/)?.[1] ?? ''}`.trim();
+  } else if (/Safari\//.test(ua) && /Version\//.test(ua)) {
+    browser = `Safari ${ua.match(/Version\/([\d.]+)/)?.[1] ?? ''}`.trim();
+  }
+
+  let os = 'Unbekannt';
+  if (/Windows NT 10\.0/.test(ua)) os = 'Windows 10/11';
+  else if (/Windows NT/.test(ua)) os = 'Windows';
+  else if (/Mac OS X/.test(ua)) os = 'macOS';
+  else if (/Android ([\d.]+)/.test(ua)) os = `Android ${ua.match(/Android ([\d.]+)/)?.[1] ?? ''}`.trim();
+  else if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+  else if (/Linux/.test(ua)) os = 'Linux';
+
+  let deviceType: ParsedUserAgent['deviceType'] = 'Desktop';
+  if (/iPad|Tablet/.test(ua) || (/Android/.test(ua) && !/Mobile/.test(ua))) {
+    deviceType = 'Tablet';
+  } else if (/Mobile|iPhone|iPod|Android/.test(ua)) {
+    deviceType = 'Mobil';
+  }
+
+  return { browser, os, deviceType };
+}

@@ -5,6 +5,7 @@ import {
   actionLabel,
   actionColor,
   serviceLabel,
+  parseUserAgent,
 } from '@/helper/audit-log/audit-log-meta';
 
 const props = defineProps<{
@@ -19,6 +20,10 @@ const emit = defineEmits<{
 function handleClose() {
   emit('close');
 }
+
+const parsedUserAgent = computed(() =>
+  props.entry?.userAgent ? parseUserAgent(props.entry.userAgent) : null,
+);
 
 const changeRows = computed(() => {
   if (!props.entry?.changes) {
@@ -86,7 +91,13 @@ function formatTimestamp(value?: string): string {
           <dt class="col-sm-3">Herkunft</dt>
           <dd class="col-sm-9 small text-medium-emphasis">
             <div v-if="entry.ip">IP: {{ entry.ip }}</div>
-            <div v-if="entry.userAgent">{{ entry.userAgent }}</div>
+            <div v-if="parsedUserAgent">
+              {{ parsedUserAgent.browser }} · {{ parsedUserAgent.os }} ·
+              {{ parsedUserAgent.deviceType }}
+            </div>
+            <div v-if="entry.userAgent" class="text-truncate" :title="entry.userAgent">
+              {{ entry.userAgent }}
+            </div>
           </dd>
         </template>
       </dl>
