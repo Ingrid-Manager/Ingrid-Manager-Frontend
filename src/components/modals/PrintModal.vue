@@ -303,12 +303,21 @@ async function handlePrint() {
 
       <div class="mb-3">
         <template v-if="printType === 'week'">
-          <CFormLabel>Woche</CFormLabel>
-          <CFormSelect id="print-modal-week" v-model="weekValue">
+          <CFormLabel for="print-modal-week">Woche</CFormLabel>
+          <!-- Native select statt CFormSelect: dessen "size"-Prop steuert nur
+               die Bootstrap-Größe (sm/lg), nicht die Anzahl sichtbarer Zeilen -
+               die braucht das native size-Attribut, daher hier form-select
+               händisch statt der Komponente. -->
+          <select
+            id="print-modal-week"
+            v-model="weekValue"
+            size="6"
+            class="form-select"
+          >
             <option v-for="opt in weekOptions" :key="opt.value" :value="opt.value">
               {{ opt.label }}
             </option>
-          </CFormSelect>
+          </select>
         </template>
 
         <template v-else-if="printType === 'month'">
