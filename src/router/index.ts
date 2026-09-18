@@ -104,13 +104,13 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/admin-only',
     component: DefaultLayout,
-    redirect: '/admin-only/ownership-transfer',
+    redirect: '/admin-only/functions',
     meta: { roles: ['admin'] },
     children: [
       {
-        path: 'ownership-transfer',
-        name: 'Besitzer übertragen',
-        component: () => import('@/views/admin/OwnershipTransfer.vue'),
+        path: 'functions',
+        name: 'Admin Funktionen',
+        component: () => import('@/views/admin/AdminFunctions.vue'),
       },
     ],
   },

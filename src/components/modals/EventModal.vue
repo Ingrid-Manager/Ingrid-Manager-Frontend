@@ -58,6 +58,8 @@ const canManageCategory = computed(
     auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',
 );
 
+const isAdmin = computed(() => auth.user?.role?.name === 'admin');
+
 const roomNames = ref<RoomNames[]>([]);
 
 onMounted(async () => {
@@ -354,6 +356,19 @@ function handleDelete() {
           </CCol>
         </CRow>
 
+        <!-- Admin-only: technische IDs, u.a. für den Besitzer-Übertragen-Dialog -->
+        <CRow v-if="isEditing && isAdmin && event" class="mb-3">
+          <CCol>
+            <div class="admin-only-ids">
+              <span class="admin-only-ids__label">Admin</span>
+              <span>Termin-ID: <code>{{ event.id }}</code></span>
+              <span v-if="event.seriesId">
+                · Serientermin-ID: <code>{{ event.seriesId }}</code>
+              </span>
+            </div>
+          </CCol>
+        </CRow>
+
         <!-- Raum -->
         <CRow class="mb-3">
           <CCol md="6">
@@ -634,5 +649,25 @@ function handleDelete() {
   margin: 1rem 0;
   border-top: 1px solid var(--cui-border-color, #d8dbe0);
   opacity: 1;
+}
+
+.admin-only-ids {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--cui-secondary-color, #6b7785);
+  border: 1px dashed var(--cui-border-color, #d8dbe0);
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.admin-only-ids__label {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  color: var(--cui-warning, #f9b115);
 }
 </style>

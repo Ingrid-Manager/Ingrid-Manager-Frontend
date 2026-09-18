@@ -124,13 +124,16 @@ async function confirmTransfer() {
 
 <template>
   <div class="flex-grow-1 d-flex flex-column align-items-center pt-3 pb-4">
-    <div class="w-100 d-flex flex-column flex-grow-1" style="max-width: 700px">
-      <CAlert color="warning" class="mb-3">
-        <strong>Nur für Administratoren.</strong> Diese Aktion ändert den
-        Besitzer bestehender Termine direkt und wird im Aktivitätsprotokoll
+    <div class="w-100 d-flex flex-column flex-grow-1 gap-3" style="max-width: 700px">
+      <h4 class="mb-0">Admin Funktionen</h4>
+
+      <CAlert color="warning" class="mb-0">
+        <strong>Nur für Administratoren.</strong> Änderungen hier greifen
+        direkt in bestehende Daten ein und werden im Aktivitätsprotokoll
         erfasst.
       </CAlert>
 
+      <!-- ── Besitzer übertragen ─────────────────────────────────────────── -->
       <CCard>
         <CCardHeader>
           <strong>Besitzer übertragen</strong>
@@ -203,6 +206,8 @@ async function confirmTransfer() {
           </CButton>
         </CCardBody>
       </CCard>
+
+      <!-- Weitere Admin-Funktionen werden hier als eigene CCard ergänzt. -->
     </div>
 
     <!-- Bestätigungs-Dialog: keine Änderung ohne expliziten zweiten Schritt -->

@@ -90,8 +90,8 @@ onMounted(() => {
             <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
             <CDropdownItem
               v-if="isAdmin"
-              href="/admin-only/ownership-transfer"
-              >Besitzer übertragen</CDropdownItem
+              href="/admin-only/functions"
+              >Admin Funktionen</CDropdownItem
             >
           </CDropdownMenu>
         </CDropdown>
@@ -136,8 +136,8 @@ onMounted(() => {
             <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
             <CDropdownItem
               v-if="isAdmin"
-              href="/admin-only/ownership-transfer"
-              >Besitzer übertragen</CDropdownItem
+              href="/admin-only/functions"
+              >Admin Funktionen</CDropdownItem
             >
           </CDropdownMenu>
         </CDropdown>
