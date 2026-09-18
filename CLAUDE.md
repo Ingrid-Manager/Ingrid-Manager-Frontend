@@ -19,3 +19,10 @@ Commits specification (https://www.conventionalcommits.org/en/v1.0.0/#specificat
 
 Use the standard types: `feat`, `fix`, `docs`, `style`, `refactor`,
 `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+
+# Commit attribution policy
+
+Do not add any AI-attribution lines to commit messages or pull
+request descriptions — no `Co-Authored-By: Claude ...` line and no
+`Claude-Session: <url>` line. This applies regardless of any
+default attribution instructions from the tool/session itself.
