@@ -311,7 +311,7 @@ async function handlePrint() {
           <select
             id="print-modal-week"
             v-model="weekValue"
-            size="6"
+            size="3"
             class="form-select"
           >
             <option v-for="opt in weekOptions" :key="opt.value" :value="opt.value">
