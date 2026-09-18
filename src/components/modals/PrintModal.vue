@@ -76,6 +76,12 @@ function weekInputValueToIsoDate(value: string): string {
   return `${y}-${m}-${d}`;
 }
 
+function formatShortDate(date: Date): string {
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `${d}.${m}.${date.getFullYear()}`;
+}
+
 const MONTH_NAMES = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
@@ -108,6 +114,32 @@ const yearOnlyValue = ref<number>(referenceDate.value.getFullYear());
 const yearOptions = computed(() =>
   yearRange(referenceDate.value.getFullYear(), 0, 5),
 );
+
+const WEEK_OPTIONS_COUNT = 30;
+
+/** Aktuelle Woche (bezogen auf referenceDate) plus die folgenden 29 Wochen,
+ *  jeweils mit Kalenderwoche und Zeitraum (Montag - Sonntag) als Label.
+ *  Ersetzt den nativen input[type=week], der in Firefox nicht unterstützt wird. */
+const weekOptions = computed(() => {
+  const firstMonday = parseIsoDate(
+    weekInputValueToIsoDate(dateToWeekInputValue(referenceDate.value)),
+  );
+
+  const options: { value: string; label: string }[] = [];
+  for (let i = 0; i < WEEK_OPTIONS_COUNT; i++) {
+    const monday = new Date(firstMonday);
+    monday.setDate(firstMonday.getDate() + i * 7);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const { week } = dateToIsoWeek(monday);
+    options.push({
+      value: dateToWeekInputValue(monday),
+      label: `KW ${String(week).padStart(2, '0')} (${formatShortDate(monday)} - ${formatShortDate(sunday)})`,
+    });
+  }
+  return options;
+});
 
 /** Das an das Backend zu übergebende ISO-Datum, je nach gewählter Ansicht. */
 const printDate = computed<string>(() => {
@@ -271,12 +303,12 @@ async function handlePrint() {
 
       <div class="mb-3">
         <template v-if="printType === 'week'">
-          <CFormInput
-            id="print-modal-week"
-            v-model="weekValue"
-            type="week"
-            label="Woche"
-          />
+          <CFormLabel>Woche</CFormLabel>
+          <CFormSelect id="print-modal-week" v-model="weekValue">
+            <option v-for="opt in weekOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </CFormSelect>
         </template>
 
         <template v-else-if="printType === 'month'">
