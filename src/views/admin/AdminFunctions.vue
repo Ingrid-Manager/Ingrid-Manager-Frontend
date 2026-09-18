@@ -123,18 +123,18 @@ async function confirmTransfer() {
 </script>
 
 <template>
-  <div class="flex-grow-1 d-flex flex-column align-items-center pt-3 pb-4">
-    <div class="w-100 d-flex flex-column flex-grow-1 gap-3" style="max-width: 700px">
-      <h4 class="mb-0">Admin Funktionen</h4>
+  <div class="flex-grow-1 d-flex flex-column align-items-center pt-3 pb-3">
+    <div class="w-100" style="max-width: 1200px">
+      <h4 class="mb-3">Admin Funktionen</h4>
 
-      <CAlert color="warning" class="mb-0">
+      <CAlert color="warning" class="mb-4">
         <strong>Nur für Administratoren.</strong> Änderungen hier greifen
         direkt in bestehende Daten ein und werden im Aktivitätsprotokoll
         erfasst.
       </CAlert>
 
       <!-- ── Besitzer übertragen ─────────────────────────────────────────── -->
-      <CCard>
+      <CCard class="mb-4">
         <CCardHeader>
           <strong>Besitzer übertragen</strong>
         </CCardHeader>
@@ -166,6 +166,11 @@ async function confirmTransfer() {
               <label class="btn btn-outline-primary" for="transfer-mode-event"
                 >Einzelner Termin</label
               >
+            </div>
+            <div v-if="mode === 'event'" class="form-text">
+              Nur für Termine, die <strong>keiner Serie</strong> angehören.
+              Gehört der Termin zu einer Serie, muss die gesamte Serie
+              übertragen werden.
             </div>
           </div>
 
