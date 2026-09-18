@@ -25,6 +25,10 @@ const parsedUserAgent = computed(() =>
   props.entry?.userAgent ? parseUserAgent(props.entry.userAgent) : null,
 );
 
+const isCreation = computed(
+  () => props.entry?.action === 'CREATE' || props.entry?.action === 'REGISTERED',
+);
+
 const changeRows = computed(() => {
   if (!props.entry?.changes) {
     return [];
@@ -103,26 +107,28 @@ function formatTimestamp(value?: string): string {
       </dl>
 
       <div v-if="changeRows.length > 0">
-        <strong class="d-block mb-2">Geänderte Felder</strong>
+        <strong class="d-block mb-2">
+          {{ isCreation ? 'Erfasste Daten' : 'Geänderte Felder' }}
+        </strong>
         <CTable bordered small class="mb-0">
           <CTableHead>
             <CTableRow>
               <CTableHeaderCell>Feld</CTableHeaderCell>
-              <CTableHeaderCell>Vorher</CTableHeaderCell>
-              <CTableHeaderCell>Nachher</CTableHeaderCell>
+              <CTableHeaderCell v-if="!isCreation">Vorher</CTableHeaderCell>
+              <CTableHeaderCell>{{ isCreation ? 'Wert' : 'Nachher' }}</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
             <CTableRow v-for="row in changeRows" :key="row.field">
               <CTableDataCell class="text-nowrap">{{ row.field }}</CTableDataCell>
-              <CTableDataCell class="small text-danger">{{ row.old }}</CTableDataCell>
+              <CTableDataCell v-if="!isCreation" class="small text-danger">{{ row.old }}</CTableDataCell>
               <CTableDataCell class="small text-success">{{ row.new }}</CTableDataCell>
             </CTableRow>
           </CTableBody>
         </CTable>
       </div>
       <div v-else class="text-medium-emphasis small">
-        Für diesen Eintrag liegen keine Feldänderungen vor.
+        Für diesen Eintrag liegen keine weiteren Daten vor.
       </div>
     </CModalBody>
 
