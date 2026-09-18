@@ -150,13 +150,22 @@ function formatChangeValue(field: string, value: unknown): string {
     return resolved;
   }
 
-  if ((field === 'role' || field === 'status') && typeof value === 'object') {
-    const resolvedRoleOrStatus = resolveRoleOrStatus(
-      field,
-      value as Record<string, unknown>,
-    );
-    if (resolvedRoleOrStatus !== null) {
-      return resolvedRoleOrStatus;
+  if (field === 'role' || field === 'status') {
+    // Kommt sowohl als reine ID (Zahl, z.B. beim ROLE_CHANGED-Eintrag)
+    // als auch als { id } bzw. { id, name } vor (z.B. bei UPDATE, wo das
+    // komplette role/status-Objekt aus dem DTO/der Entity verglichen wird).
+    if (typeof value === 'number') {
+      const names = field === 'role' ? ROLE_NAMES : STATUS_NAMES;
+      return names[value] ?? `#${value}`;
+    }
+    if (typeof value === 'object') {
+      const resolvedRoleOrStatus = resolveRoleOrStatus(
+        field,
+        value as Record<string, unknown>,
+      );
+      if (resolvedRoleOrStatus !== null) {
+        return resolvedRoleOrStatus;
+      }
     }
   }
 
