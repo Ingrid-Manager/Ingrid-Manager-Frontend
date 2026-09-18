@@ -85,6 +85,8 @@ export const ACTION_LABELS: Record<string, string> = {
   SERIES_GENERATED: 'Serie generiert',
   SERIES_MODIFIED: 'Serie geändert',
   OWNER_CHANGED: 'Besitzer geändert',
+  CALENDAR_PRINTED: 'Kalender gedruckt',
+  REORGANIZATION_RUN: 'Reorg-Lauf',
 };
 
 export function actionLabel(action: string): string {
@@ -109,6 +111,8 @@ export function actionColor(action: string): string {
   if (action === 'UPDATE' || action === 'ROLE_CHANGED' || action === 'OWNER_CHANGED')
     return 'warning';
   if (action === 'USER_ACTIVATED') return 'success';
+  if (action === 'CALENDAR_PRINTED' || action === 'REORGANIZATION_RUN')
+    return 'info';
   return 'secondary';
 }
 

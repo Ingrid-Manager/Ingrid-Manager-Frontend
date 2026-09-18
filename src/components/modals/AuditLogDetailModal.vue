@@ -39,8 +39,12 @@ const parsedUserAgent = computed(() =>
   props.entry?.userAgent ? parseUserAgent(props.entry.userAgent) : null,
 );
 
+// Aktionen, deren "changes" per diff(null, ...) befüllt werden - also nur
+// ein "Wert" ohne sinnvollen "Vorher"-Zustand (Vorher wäre immer "—").
+const SNAPSHOT_ACTIONS = new Set(['CREATE', 'REGISTERED', 'CALENDAR_PRINTED']);
+
 const isCreation = computed(
-  () => props.entry?.action === 'CREATE' || props.entry?.action === 'REGISTERED',
+  () => !!props.entry && SNAPSHOT_ACTIONS.has(props.entry.action),
 );
 
 // ─── Referenzdaten zum Auflösen von IDs (Raum/Nutzer/Ressource/Serie/AVM-
