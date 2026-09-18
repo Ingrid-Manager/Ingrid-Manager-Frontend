@@ -35,11 +35,90 @@ function today(): string {
   return `${y}-${m}-${d}`;
 }
 
+function parseIsoDate(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** ISO-8601-Kalenderwoche (Montag als Wochenbeginn) für ein Datum. */
+function dateToIsoWeek(date: Date): { year: number; week: number } {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return { year: d.getUTCFullYear(), week };
+}
+
+function dateToWeekInputValue(date: Date): string {
+  const { year, week } = dateToIsoWeek(date);
+  return `${year}-W${String(week).padStart(2, '0')}`;
+}
+
+/** Montag der übergebenen ISO-Kalenderwoche, als "YYYY-MM-DD". */
+function weekInputValueToIsoDate(value: string): string {
+  const [yearStr, weekStr] = value.split('-W');
+  const year = Number(yearStr);
+  const week = Number(weekStr);
+
+  const simple = new Date(year, 0, 1 + (week - 1) * 7);
+  const dayOfWeek = simple.getDay();
+  const monday = new Date(simple);
+  if (dayOfWeek <= 4) {
+    monday.setDate(simple.getDate() - dayOfWeek + 1);
+  } else {
+    monday.setDate(simple.getDate() + 8 - dayOfWeek);
+  }
+
+  const y = monday.getFullYear();
+  const m = String(monday.getMonth() + 1).padStart(2, '0');
+  const d = String(monday.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+const MONTH_NAMES = [
+  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+];
+
+/** Jahre für die Dropdowns: von `back` Jahren in der Vergangenheit bis
+ *  `forward` Jahre in der Zukunft, ausgehend vom übergebenen Jahr. */
+function yearRange(center: number, back: number, forward: number): number[] {
+  const years: number[] = [];
+  for (let y = center + forward; y >= center - back; y--) {
+    years.push(y);
+  }
+  return years;
+}
+
 const printType = ref<PrintViewType>('week');
-const printDate = ref<string>(props.initialDate || today());
 const selectedRoomIds = ref<number[]>([]);
 const loading = ref(false);
 const errorMessage = ref('');
+
+const referenceDate = computed(() =>
+  parseIsoDate(props.initialDate || today()),
+);
+
+const weekValue = ref<string>(dateToWeekInputValue(referenceDate.value));
+const monthValue = ref<number>(referenceDate.value.getMonth() + 1);
+const monthYearValue = ref<number>(referenceDate.value.getFullYear());
+const yearOnlyValue = ref<number>(referenceDate.value.getFullYear());
+
+const yearOptions = computed(() =>
+  yearRange(referenceDate.value.getFullYear(), 10, 2),
+);
+
+/** Das an das Backend zu übergebende ISO-Datum, je nach gewählter Ansicht. */
+const printDate = computed<string>(() => {
+  if (printType.value === 'week') {
+    return weekValue.value ? weekInputValueToIsoDate(weekValue.value) : '';
+  }
+  if (printType.value === 'month') {
+    return `${monthYearValue.value}-${String(monthValue.value).padStart(2, '0')}-01`;
+  }
+  return `${yearOnlyValue.value}-01-01`;
+});
 
 const maxReached = computed(
   () => selectedRoomIds.value.length >= MAX_PRINTABLE_ROOMS,
@@ -52,7 +131,11 @@ watch(
   () => props.visible,
   (visible) => {
     if (visible) {
-      printDate.value = props.initialDate || today();
+      const refDate = referenceDate.value;
+      weekValue.value = dateToWeekInputValue(refDate);
+      monthValue.value = refDate.getMonth() + 1;
+      monthYearValue.value = refDate.getFullYear();
+      yearOnlyValue.value = refDate.getFullYear();
       selectedRoomIds.value = props.rooms
         .slice(0, MAX_PRINTABLE_ROOMS)
         .map((room) => room.id);
@@ -60,19 +143,6 @@ watch(
     }
   },
 );
-
-const typeLabel = computed(() => {
-  switch (printType.value) {
-    case 'week':
-      return 'Woche';
-    case 'month':
-      return 'Monat';
-    case 'year':
-      return 'Jahr';
-    default:
-      return '';
-  }
-});
 
 function toggleRoom(id: number) {
   const idx = selectedRoomIds.value.indexOf(id);
@@ -200,12 +270,51 @@ async function handlePrint() {
       </div>
 
       <div class="mb-3">
-        <CFormInput
-          id="print-modal-date"
-          v-model="printDate"
-          type="date"
-          :label="`Datum innerhalb des zu druckenden ${typeLabel === 'Woche' ? 'Woche' : typeLabel === 'Monat' ? 'Monats' : 'Jahres'}`"
-        />
+        <template v-if="printType === 'week'">
+          <CFormInput
+            id="print-modal-week"
+            v-model="weekValue"
+            type="week"
+            label="Woche"
+          />
+        </template>
+
+        <template v-else-if="printType === 'month'">
+          <CFormLabel>Monat und Jahr</CFormLabel>
+          <div class="d-flex gap-2">
+            <CFormSelect
+              id="print-modal-month"
+              v-model.number="monthValue"
+              class="flex-grow-1"
+            >
+              <option v-for="(name, idx) in MONTH_NAMES" :key="idx" :value="idx + 1">
+                {{ name }}
+              </option>
+            </CFormSelect>
+            <CFormSelect
+              id="print-modal-month-year"
+              v-model.number="monthYearValue"
+              class="print-modal-year-select"
+            >
+              <option v-for="year in yearOptions" :key="year" :value="year">
+                {{ year }}
+              </option>
+            </CFormSelect>
+          </div>
+        </template>
+
+        <template v-else>
+          <CFormSelect
+            id="print-modal-year"
+            v-model.number="yearOnlyValue"
+            label="Jahr"
+            class="print-modal-year-select"
+          >
+            <option v-for="year in yearOptions" :key="year" :value="year">
+              {{ year }}
+            </option>
+          </CFormSelect>
+        </template>
       </div>
 
       <div class="mb-2 d-flex justify-content-between align-items-center">
@@ -288,5 +397,9 @@ async function handlePrint() {
   border-radius: 50%;
   flex-shrink: 0;
   margin-left: 8px;
+}
+
+.print-modal-year-select {
+  max-width: 120px;
 }
 </style>
