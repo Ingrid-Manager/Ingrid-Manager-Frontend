@@ -97,6 +97,25 @@ const routes: RouteRecordRaw[] = [
   },
 
   // ─────────────────────────────────────────────────────────────
+  // ADMIN-ONLY (bewusst NICHT unter /admin verschachtelt: der Guard unten
+  // sammelt roles über ALLE to.matched-Records auf, verschachtelt unter
+  // /admin würde also automatisch auch 'verwaltung' mit durchlassen)
+  // ─────────────────────────────────────────────────────────────
+  {
+    path: '/admin-only',
+    component: DefaultLayout,
+    redirect: '/admin-only/ownership-transfer',
+    meta: { roles: ['admin'] },
+    children: [
+      {
+        path: 'ownership-transfer',
+        name: 'Besitzer übertragen',
+        component: () => import('@/views/admin/OwnershipTransfer.vue'),
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────
   // RESSOURCEN
   // ─────────────────────────────────────────────────────────────
   {

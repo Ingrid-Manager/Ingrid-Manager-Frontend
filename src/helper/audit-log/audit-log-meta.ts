@@ -84,6 +84,7 @@ export const ACTION_LABELS: Record<string, string> = {
   SYSTEM_ERROR: 'Systemfehler',
   SERIES_GENERATED: 'Serie generiert',
   SERIES_MODIFIED: 'Serie geändert',
+  OWNER_CHANGED: 'Besitzer geändert',
 };
 
 export function actionLabel(action: string): string {
@@ -105,7 +106,8 @@ export function actionColor(action: string): string {
   if (action === 'LOGIN_FAILED') return 'danger';
   if (action === 'DELETE') return 'danger';
   if (action === 'CREATE' || action === 'REGISTERED') return 'success';
-  if (action === 'UPDATE' || action === 'ROLE_CHANGED') return 'warning';
+  if (action === 'UPDATE' || action === 'ROLE_CHANGED' || action === 'OWNER_CHANGED')
+    return 'warning';
   if (action === 'USER_ACTIVATED') return 'success';
   return 'secondary';
 }

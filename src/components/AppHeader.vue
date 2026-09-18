@@ -18,6 +18,7 @@ const canAccessAdmin = computed(
   () =>
     auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',
 );
+const isAdmin = computed(() => auth.user?.role?.name === 'admin');
 const showTerminImport = computed(
   () => import.meta.env.VITE_TERMIN_IMPORT === 'true',
 );
@@ -87,6 +88,11 @@ onMounted(() => {
               >Termin Import</CDropdownItem
             >
             <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
+            <CDropdownItem
+              v-if="isAdmin"
+              href="/admin-only/ownership-transfer"
+              >Besitzer übertragen</CDropdownItem
+            >
           </CDropdownMenu>
         </CDropdown>
       </CHeaderNav>
@@ -128,6 +134,11 @@ onMounted(() => {
               >Termin Import</CDropdownItem
             >
             <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
+            <CDropdownItem
+              v-if="isAdmin"
+              href="/admin-only/ownership-transfer"
+              >Besitzer übertragen</CDropdownItem
+            >
           </CDropdownMenu>
         </CDropdown>
       </CHeaderNav>
