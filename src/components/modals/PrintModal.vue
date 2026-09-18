@@ -106,7 +106,7 @@ const monthYearValue = ref<number>(referenceDate.value.getFullYear());
 const yearOnlyValue = ref<number>(referenceDate.value.getFullYear());
 
 const yearOptions = computed(() =>
-  yearRange(referenceDate.value.getFullYear(), 10, 2),
+  yearRange(referenceDate.value.getFullYear(), 0, 5),
 );
 
 /** Das an das Backend zu übergebende ISO-Datum, je nach gewählter Ansicht. */
