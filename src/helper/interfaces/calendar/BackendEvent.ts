@@ -12,4 +12,5 @@ export interface BackendEvent {
   user_name: string;
   isBackground: boolean;
   seriesid?: number | null;
+  categoryid?: number;
 }

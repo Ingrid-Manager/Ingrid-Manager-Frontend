@@ -19,6 +19,9 @@ export function useEventForm() {
 
     // NEU: Benutzerdefinierte Termine
     customSeries: false,
+
+    // Kategorie "Gottesdienst" (nur für Verwaltung/Admin wählbar)
+    isGottesdienst: false,
   });
 
   // Liste der zusätzlichen, frei gewählten Einzeltermine
@@ -184,6 +187,8 @@ export function useEventForm() {
       runDuringSchoolHolidays: false,
 
       customSeries: false,
+
+      isGottesdienst: false,
     };
 
     customDates.value = [];

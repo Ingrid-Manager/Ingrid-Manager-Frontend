@@ -12,4 +12,5 @@ export interface CalendarEvent {
   userName: string;
   isBackground: boolean;
   seriesId?: number | null;
+  categoryId?: number;
 }
