@@ -4,6 +4,10 @@ import { ref, computed, onMounted } from 'vue';
 import { getUsers } from '@/api/users/getUsers';
 import { transferOwner } from '@/api/ownershipTransfer';
 import type { UserListItem } from '@/helper/interfaces/user/UserListItem';
+import { runReorganization, getHolidays } from '@/api/reorganization';
+import type { ReorganizationHoliday } from '@/api/reorganization';
+import { getAllSeriesEvents } from '@/api/series/getAllSeriesEvents';
+import type { SeriesEvent } from '@/helper/interfaces/series/SeriesEvent';
 
 type TransferMode = 'series' | 'event';
 
@@ -34,7 +38,74 @@ async function loadUsers() {
 
 onMounted(() => {
   loadUsers();
+  loadSeriesEvents();
+  loadHolidays();
 });
+
+// ─── Reorg Service ──────────────────────────────────────────────────────────
+
+const seriesEvents = ref<SeriesEvent[]>([]);
+const seriesEventsLoading = ref(false);
+const seriesEventsError = ref('');
+
+const holidays = ref<ReorganizationHoliday[]>([]);
+const holidaysLoading = ref(false);
+const holidaysError = ref('');
+
+const reorgRunning = ref(false);
+const reorgError = ref('');
+const reorgSuccessMessage = ref('');
+
+async function loadSeriesEvents() {
+  seriesEventsLoading.value = true;
+  seriesEventsError.value = '';
+  try {
+    seriesEvents.value = await getAllSeriesEvents();
+  } catch (err) {
+    console.error('Fehler beim Laden der Serientermine:', err);
+    seriesEventsError.value = 'Serientermine konnten nicht geladen werden.';
+  } finally {
+    seriesEventsLoading.value = false;
+  }
+}
+
+async function loadHolidays() {
+  holidaysLoading.value = true;
+  holidaysError.value = '';
+  try {
+    holidays.value = await getHolidays();
+  } catch (err) {
+    console.error('Fehler beim Laden der Ferien:', err);
+    holidaysError.value = 'Ferien konnten nicht geladen werden.';
+  } finally {
+    holidaysLoading.value = false;
+  }
+}
+
+async function startReorg() {
+  reorgRunning.value = true;
+  reorgError.value = '';
+  reorgSuccessMessage.value = '';
+
+  try {
+    await runReorganization();
+    reorgSuccessMessage.value = 'Reorg-Lauf wurde erfolgreich ausgeführt.';
+
+    // Beide Listen spiegeln den Stand danach wieder (Ferien-Import und
+    // Serien-Generierung können sich beide ändern).
+    await Promise.all([loadSeriesEvents(), loadHolidays()]);
+  } catch (err: any) {
+    reorgError.value =
+      err?.response?.data?.message ?? 'Der Reorg-Lauf ist fehlgeschlagen.';
+    console.error('Fehler beim Reorg-Lauf:', err);
+  } finally {
+    reorgRunning.value = false;
+  }
+}
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleDateString('de-DE');
+}
 
 const targetIdLabel = computed(() =>
   mode.value === 'series' ? 'Serientermin-ID' : 'Termin-ID',
@@ -212,6 +283,98 @@ async function confirmTransfer() {
         </CCardBody>
       </CCard>
 
+      <!-- ── Reorg Service ───────────────────────────────────────────────── -->
+      <CCard class="mb-4">
+        <CCardHeader>
+          <strong>Reorg Service</strong>
+        </CCardHeader>
+
+        <CCardBody>
+          <CAlert v-if="reorgError" color="danger" class="mb-3">
+            {{ reorgError }}
+          </CAlert>
+          <CAlert v-if="reorgSuccessMessage" color="success" class="mb-3">
+            {{ reorgSuccessMessage }}
+          </CAlert>
+
+          <CButton
+            color="primary"
+            class="mb-4"
+            :disabled="reorgRunning"
+            @click="startReorg"
+          >
+            <CSpinner v-if="reorgRunning" size="sm" class="me-2" />
+            {{ reorgRunning ? 'Reorg läuft…' : 'Reorg Starten' }}
+          </CButton>
+
+          <!-- Serientermine -->
+          <div class="mb-2 d-flex justify-content-between align-items-center">
+            <CFormLabel class="mb-0">Serientermine</CFormLabel>
+            <span class="text-muted small">{{ seriesEvents.length }}</span>
+          </div>
+          <CAlert v-if="seriesEventsError" color="danger" class="mb-3">
+            {{ seriesEventsError }}
+          </CAlert>
+          <div v-else class="reorg-list mb-4">
+            <div
+              v-if="seriesEventsLoading"
+              class="d-flex justify-content-center py-3"
+            >
+              <CSpinner size="sm" color="primary" />
+            </div>
+            <template v-else>
+              <div
+                v-for="series in seriesEvents"
+                :key="series.id"
+                class="reorg-list__item"
+              >
+                <span class="text-muted small">#{{ series.id }}</span>
+                <span class="flex-grow-1">{{ series.title }}</span>
+                <CBadge :color="series.active ? 'success' : 'secondary'">
+                  {{ series.active ? 'Aktiv' : 'Inaktiv' }}
+                </CBadge>
+              </div>
+              <p v-if="seriesEvents.length === 0" class="text-muted mb-0">
+                Keine Serientermine gefunden.
+              </p>
+            </template>
+          </div>
+
+          <!-- Ferien -->
+          <div class="mb-2 d-flex justify-content-between align-items-center">
+            <CFormLabel class="mb-0">Ferien &amp; Feiertage</CFormLabel>
+            <span class="text-muted small">{{ holidays.length }}</span>
+          </div>
+          <CAlert v-if="holidaysError" color="danger" class="mb-0">
+            {{ holidaysError }}
+          </CAlert>
+          <div v-else class="reorg-list">
+            <div
+              v-if="holidaysLoading"
+              class="d-flex justify-content-center py-3"
+            >
+              <CSpinner size="sm" color="primary" />
+            </div>
+            <template v-else>
+              <div
+                v-for="holiday in holidays"
+                :key="holiday.id"
+                class="reorg-list__item"
+              >
+                <span class="text-muted small">#{{ holiday.id }}</span>
+                <span class="flex-grow-1">{{ holiday.title }}</span>
+                <span class="small text-muted">
+                  {{ formatDate(holiday.start) }} – {{ formatDate(holiday.end) }}
+                </span>
+              </div>
+              <p v-if="holidays.length === 0" class="text-muted mb-0">
+                Keine Ferien/Feiertage gefunden.
+              </p>
+            </template>
+          </div>
+        </CCardBody>
+      </CCard>
+
       <!-- Weitere Admin-Funktionen werden hier als eigene CCard ergänzt. -->
     </div>
 
@@ -249,3 +412,25 @@ async function confirmTransfer() {
     </CModal>
   </div>
 </template>
+
+<style scoped>
+.reorg-list {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--cui-border-color, #d8dbe0);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.reorg-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--cui-border-color-translucent, #d8dbe0);
+}
+
+.reorg-list__item:last-child {
+  border-bottom: none;
+}
+</style>
