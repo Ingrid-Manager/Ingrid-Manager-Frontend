@@ -170,6 +170,7 @@ const handlePasswordReset = (): void => {
           <CFormSelect v-model="form.statusId">
             <option :value="1">Aktiv</option>
             <option :value="2">Inaktiv</option>
+            <option :value="3">Ausstehend</option>
             <option :value="4">Blockiert</option>
           </CFormSelect>
         </CCol>
