@@ -222,7 +222,7 @@ onMounted(() => {
               component="h6"
               class="bg-body-secondary text-body-secondary fw-semibold mb-2 rounded-top"
             >
-              Profil
+              {{ auth.user?.firstName ?? 'Profil' }}
             </CDropdownHeader>
             <!--
             <CDropdownItem>
