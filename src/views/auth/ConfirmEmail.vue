@@ -56,8 +56,8 @@ onMounted(async () => {
                   <div v-else-if="success">
                     <h1>E-Mail bestätigt</h1>
                     <p class="text-body-secondary">
-                      Vielen Dank, Ihre E-Mail-Adresse wurde erfolgreich
-                      bestätigt. Bevor Sie sich anmelden können, muss Ihr
+                      Vielen Dank, deine E-Mail-Adresse wurde erfolgreich
+                      bestätigt. Bevor du dich anmelden kannst, muss dein
                       Konto noch von einem Administrator freigeschaltet
                       werden.
                     </p>
@@ -95,7 +95,7 @@ onMounted(async () => {
                 >
                   <h2>Fast geschafft</h2>
                   <p>
-                    Nach der Bestätigung Ihrer E-Mail-Adresse muss Ihr Konto
+                    Nach der Bestätigung deiner E-Mail-Adresse muss dein Konto
                     noch von der Verwaltung freigeschaltet werden.
                   </p>
                 </CCardBody>
