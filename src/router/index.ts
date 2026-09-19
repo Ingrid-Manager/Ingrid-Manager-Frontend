@@ -39,6 +39,15 @@ const routes: RouteRecordRaw[] = [
   },
 
   // ─────────────────────────────────────────────────────────────
+  // CONFIRM EMAIL (Link aus der Registrierungs-Mail, außerhalb von /auth)
+  // ─────────────────────────────────────────────────────────────
+  {
+    path: '/confirm-email',
+    name: 'ConfirmEmail',
+    component: () => import('@/views/auth/ConfirmEmail.vue'),
+  },
+
+  // ─────────────────────────────────────────────────────────────
   // DASHBOARD
   // ─────────────────────────────────────────────────────────────
   {
@@ -169,9 +178,10 @@ router.beforeEach(async (to, from, next) => {
 
   const isLoggedIn = auth.isAuthenticated;
   const isAuthRoute = to.path.startsWith('/auth');
+  const isPublicRoute = isAuthRoute || to.path === '/confirm-email';
 
   // Nicht eingeloggt
-  if (!isLoggedIn && !isAuthRoute) {
+  if (!isLoggedIn && !isPublicRoute) {
     return next('/auth/login');
   }
 
