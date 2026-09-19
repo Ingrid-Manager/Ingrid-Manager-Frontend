@@ -29,7 +29,7 @@ const submit = async () => {
 
   // client-side input validation
   if (!form.value.email || !form.value.password) {
-    error.value = 'Bitte geben Sie E-Mail und Passwort ein.';
+    error.value = 'Bitte gib E-Mail und Passwort ein.';
     loading.value = false;
     return;
   }
@@ -60,7 +60,7 @@ const submit = async () => {
                   <CForm @submit.prevent="submit">
                     <h1>Anmeldung</h1>
                     <p class="text-body-secondary">
-                      Melden Sie sich mit Ihren Zugangsdaten an.
+                      Melde dich mit deinen Zugangsdaten an.
                     </p>
                     <CAlert
                       v-if="error"
@@ -126,7 +126,7 @@ const submit = async () => {
                   <div>
                     <h2>Registrieren</h2>
                     <p>
-                      Sie können sich hier registrieren, müssen aber vor der
+                      Du kannst dich hier registrieren, musst aber vor der
                       Verwendung des Ingrid Managers von der Verwaltung
                       freigeschaltet werden!
                     </p>
