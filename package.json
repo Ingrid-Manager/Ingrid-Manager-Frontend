@@ -1,6 +1,6 @@
 {
   "name": "@ingrid-manager/dev_ingridmanagerfrontend",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Frontend for the Ingrid Manager Backend",
   "bugs": {
     "url": "https://github.com/Ingrid-Manager/DEV_IngridManagerFrontend/issues"
