@@ -2,6 +2,8 @@
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { register } from '@/api/register.api';
+import ImpressumModal from '@/components/modals/ImpressumModal.vue';
+import DatenschutzModal from '@/components/modals/DatenschutzModal.vue';
 
 const router = useRouter();
 
@@ -9,6 +11,8 @@ const loading = ref(false);
 const error = ref('');
 const success = ref(false);
 const loadedAt = Date.now();
+const showImpressum = ref(false);
+const showDatenschutz = ref(false);
 
 const form = ref({
   'register-firstname': '',
@@ -254,6 +258,33 @@ const submit = async () => {
           </CRow>
         </CCol>
       </CRow>
+      <CRow class="justify-content-center mt-3">
+        <CCol :md="8" class="text-center">
+          <CButton
+            color="link"
+            class="text-body-secondary"
+            @click="showImpressum = true"
+          >
+            Impressum
+          </CButton>
+          <CButton
+            color="link"
+            class="text-body-secondary"
+            @click="showDatenschutz = true"
+          >
+            Datenschutz
+          </CButton>
+        </CCol>
+      </CRow>
     </CContainer>
+
+    <ImpressumModal
+      :visible="showImpressum"
+      @close="showImpressum = false"
+    />
+    <DatenschutzModal
+      :visible="showDatenschutz"
+      @close="showDatenschutz = false"
+    />
   </div>
 </template>

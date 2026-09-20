@@ -94,6 +94,32 @@ VITE_API_URL=http://localhost:3000/api/v1
 
 Ersetze die URL durch die Adresse deiner Backend-Instanz.
 
+Für den produktiven Betrieb (`.env.production`) sollten zusätzlich die
+Inhalte für Impressum und Datenschutzerklärung hinterlegt werden, die als
+Modal auf der Anmelde-, Registrierungs- und E-Mail-Bestätigungsseite
+angezeigt werden. Alle Variablen sind optional; fehlende Angaben werden im
+jeweiligen Modal einfach ausgeblendet.
+
+```env
+# Impressum
+VITE_IMPRESSUM_NAME=Muster Kirchengemeinde
+VITE_IMPRESSUM_STREET=Musterstraße 1
+VITE_IMPRESSUM_ZIP_CITY=12345 Musterstadt
+VITE_IMPRESSUM_REPRESENTED_BY=Max Mustermann
+VITE_IMPRESSUM_PHONE=+49 123 456789
+VITE_IMPRESSUM_EMAIL=info@mustergemeinde.de
+VITE_IMPRESSUM_REGISTER_ENTRY=Vereinsregister ... , Registernummer ...
+VITE_IMPRESSUM_VAT_ID=DE123456789
+VITE_IMPRESSUM_RESPONSIBLE_FOR_CONTENT=Max Mustermann
+
+# Datenschutzerklärung
+VITE_DATENSCHUTZ_RESPONSIBLE=Muster Kirchengemeinde
+VITE_DATENSCHUTZ_RESPONSIBLE_ADDRESS=Musterstraße 1, 12345 Musterstadt
+VITE_DATENSCHUTZ_EMAIL=datenschutz@mustergemeinde.de
+VITE_DATENSCHUTZ_DPO=Externe(r) Datenschutzbeauftragte(r), Name, Kontakt
+VITE_DATENSCHUTZ_SUPERVISORY_AUTHORITY=Landesbeauftragte(r) für Datenschutz ...
+```
+
 ### 4. Entwicklungsserver starten
 
 ```bash
