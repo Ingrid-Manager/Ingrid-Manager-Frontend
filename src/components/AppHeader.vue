@@ -222,7 +222,10 @@ onMounted(() => {
               component="h6"
               class="bg-body-secondary text-body-secondary fw-semibold mb-2 rounded-top"
             >
-              {{ auth.user?.firstName ?? 'Profil' }}
+              Profil:
+              <template v-if="auth.user?.firstName"
+                ><br />{{ auth.user.firstName }}</template
+              >
             </CDropdownHeader>
             <!--
             <CDropdownItem>
