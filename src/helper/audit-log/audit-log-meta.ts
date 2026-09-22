@@ -251,8 +251,7 @@ export const FREQUENCY_LABELS: Record<string, string> = {
 };
 
 /** Wochentag wie in SeriesEvent.weekdays verwendet (JS-Konvention: 0=Sonntag...6=Samstag,
- *  siehe CalendarView.vue, wo `new Date(...).getDay()` direkt als weekday gesendet wird).
- *  7 wird zusätzlich als Sonntag erkannt, für ältere Datensätze in ISO-Konvention. */
+ *  siehe CalendarView.vue, wo `new Date(...).getDay()` direkt als weekday gesendet wird). */
 export const WEEKDAY_LABELS: Record<number, string> = {
   0: 'So',
   1: 'Mo',
@@ -261,7 +260,6 @@ export const WEEKDAY_LABELS: Record<number, string> = {
   4: 'Do',
   5: 'Fr',
   6: 'Sa',
-  7: 'So',
 };
 
 /** Felder, deren Wert ein Datum/Zeitstempel ist und daher im deutschen
