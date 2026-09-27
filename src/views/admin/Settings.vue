@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { getOrgSettings } from '@/api/getSettings';
+import {
+  getAvmLocations,
+  createAvmLocation,
+  updateAvmLocation,
+} from '@/api/avmLocations.api';
+import type { Location } from '@/helper/interfaces/location/location';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,12 +34,11 @@ interface OrgSettings {
   mailversandAktiv: boolean;
 }
 
-interface Location {
-  id: number;
-  ahaTitle: string;
-  ahaUrl: string;
-  ahaUser: string;
-  ahaPassword: string;
+interface LocationForm {
+  title: string;
+  ahaurl: string;
+  ahauser: string;
+  ahapassword: string;
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -42,61 +47,127 @@ const activeTab = ref<string>('organisation');
 const loadingSettings = ref(false);
 const loadError = ref('');
 
-const locations = ref<Location[]>([
-  { id: 1, ahaTitle: 'Location 1', ahaUrl: '', ahaUser: '', ahaPassword: '' },
-]);
+// ─── Locations ────────────────────────────────────────────────────────────────
 
-const selectedLocationId = ref<number>(1);
+const locations = ref<Location[]>([]);
+const loadingLocations = ref(false);
+const savingLocation = ref(false);
+const locationError = ref('');
+
+const selectedLocationId = ref<number | null>(null);
+const editModeLocation = ref(false);
+// true while a location is being created (not yet saved in the backend)
+const isNewLocation = ref(false);
+
+const emptyLocationForm = (): LocationForm => ({
+  title: '',
+  ahaurl: '',
+  ahauser: '',
+  ahapassword: '',
+});
+
+// Edit buffer for the selected location; the password is never loaded from
+// the backend and is only sent when a new one was entered.
+const locationForm = ref<LocationForm>(emptyLocationForm());
 
 const selectedLocation = computed(
-  () =>
-    locations.value.find((l) => l.id === selectedLocationId.value) ??
-    locations.value[0],
+  () => locations.value.find((l) => l.id === selectedLocationId.value) ?? null,
 );
 
-const editModeLocation = ref(false);
-let locationSnapshot: Location | null = null;
+function fillLocationForm(loc: Location | null) {
+  locationForm.value = loc
+    ? {
+        title: loc.title ?? '',
+        ahaurl: loc.ahaurl ?? '',
+        ahauser: loc.ahauser ?? '',
+        ahapassword: '',
+      }
+    : emptyLocationForm();
+}
+
+watch(selectedLocation, (loc) => {
+  if (!isNewLocation.value) fillLocationForm(loc);
+});
+
+async function loadLocations() {
+  loadingLocations.value = true;
+  locationError.value = '';
+  try {
+    locations.value = await getAvmLocations();
+    if (!selectedLocation.value) {
+      selectedLocationId.value = locations.value[0]?.id ?? null;
+    }
+  } catch (err) {
+    console.error('Fehler beim Laden der Locations:', err);
+    locationError.value = 'Locations konnten nicht geladen werden.';
+  } finally {
+    loadingLocations.value = false;
+  }
+}
 
 function addLocation() {
-  const newId = Math.max(...locations.value.map((l) => l.id)) + 1;
-  locations.value.push({
-    id: newId,
-    ahaTitle: `Location ${newId}`,
-    ahaUrl: '',
-    ahaUser: '',
-    ahaPassword: '',
-  });
-  selectedLocationId.value = newId;
+  isNewLocation.value = true;
+  locationForm.value = emptyLocationForm();
   editModeLocation.value = true;
+  locationError.value = '';
 }
 
 function startEditLocation() {
-  locationSnapshot = { ...selectedLocation.value };
+  fillLocationForm(selectedLocation.value);
   editModeLocation.value = true;
+  locationError.value = '';
 }
 
 function cancelEditLocation() {
-  if (locationSnapshot) {
-    const idx = locations.value.findIndex(
-      (l) => l.id === selectedLocationId.value,
-    );
-    if (idx !== -1) locations.value[idx] = { ...locationSnapshot };
+  isNewLocation.value = false;
+  editModeLocation.value = false;
+  locationError.value = '';
+  fillLocationForm(selectedLocation.value);
+}
+
+async function saveLocation() {
+  const form = locationForm.value;
+  const title = form.title.trim();
+  if (!title) {
+    locationError.value = 'Bitte einen Namen angeben.';
+    return;
   }
-  editModeLocation.value = false;
+
+  const payload = {
+    title,
+    ahaurl: form.ahaurl.trim(),
+    ahauser: form.ahauser.trim(),
+    ...(form.ahapassword ? { ahapassword: form.ahapassword } : {}),
+  };
+
+  savingLocation.value = true;
+  locationError.value = '';
+  try {
+    if (isNewLocation.value) {
+      const created = await createAvmLocation(payload);
+      locations.value.push(created);
+      isNewLocation.value = false;
+      selectedLocationId.value = created.id;
+    } else if (selectedLocationId.value !== null) {
+      const updated = await updateAvmLocation({
+        id: selectedLocationId.value,
+        ...payload,
+      });
+      const idx = locations.value.findIndex((l) => l.id === updated.id);
+      if (idx !== -1) locations.value[idx] = updated;
+    }
+    editModeLocation.value = false;
+    fillLocationForm(selectedLocation.value);
+  } catch (err) {
+    console.error('Fehler beim Speichern der Location:', err);
+    locationError.value = 'Location konnte nicht gespeichert werden.';
+  } finally {
+    savingLocation.value = false;
+  }
 }
 
-function saveLocation() {
-  // TODO: API-Call
-  editModeLocation.value = false;
-}
-
-function deleteLocation() {
-  if (locations.value.length <= 1) return;
-  locations.value = locations.value.filter(
-    (l) => l.id !== selectedLocationId.value,
-  );
-  selectedLocationId.value = locations.value[0].id;
-}
+// TODO: Löschen von Locations (DELETE /avm-locations/:id) wird später
+// angebunden; der Button ist bis dahin ausgeblendet.
 
 // TODO: SMTP-Verbindungstest / Testmail-Versand sind vorerst deaktiviert
 // (Backend-Endpoints dafür existieren noch nicht) und werden zu einem
@@ -129,6 +200,7 @@ const settings = ref<OrgSettings>({
 // ─── Load org settings from backend on mount ──────────────────────────────────
 
 onMounted(async () => {
+  loadLocations();
   loadingSettings.value = true;
   loadError.value = '';
   try {
@@ -374,96 +446,139 @@ defineExpose({
                 class="d-flex justify-content-between align-items-center"
               >
                 <strong>Locations</strong>
-                <CButton color="info" size="sm" @click="addLocation">
+                <CButton
+                  color="info"
+                  size="sm"
+                  :disabled="editModeLocation"
+                  @click="addLocation"
+                >
                   + Location hinzufügen
                 </CButton>
               </CCardHeader>
               <CCardBody>
-                <!-- Dropdown zur Location-Auswahl -->
-                <CRow class="mb-4">
-                  <CCol md="4">
-                    <CFormLabel>Location auswählen</CFormLabel>
-                    <CFormSelect v-model="selectedLocationId">
-                      <option
-                        v-for="loc in locations"
-                        :key="loc.id"
-                        :value="loc.id"
-                      >
-                        {{ loc.ahaTitle || `Location ${loc.id}` }}
-                      </option>
-                    </CFormSelect>
-                  </CCol>
-                </CRow>
+                <CAlert v-if="locationError" color="danger" class="mb-3">
+                  {{ locationError }}
+                </CAlert>
 
-                <!-- Felder der gewählten Location -->
-                <CRow class="mb-3">
-                  <CCol md="6">
-                    <CFormInput
-                      v-model="selectedLocation.ahaTitle"
-                      label="Name"
-                      placeholder="z. B. Hauptgebäude"
-                      :disabled="!editModeLocation"
-                    />
-                  </CCol>
-                  <CCol md="6">
-                    <CFormInput
-                      v-model="selectedLocation.ahaUrl"
-                      label="AHA URL"
-                      type="url"
-                      placeholder="https://"
-                      :disabled="!editModeLocation"
-                    />
-                  </CCol>
-                </CRow>
-
-                <CRow class="mb-3">
-                  <CCol md="6">
-                    <CFormInput
-                      v-model="selectedLocation.ahaUser"
-                      label="Benutzername"
-                      placeholder="admin"
-                      :disabled="!editModeLocation"
-                    />
-                  </CCol>
-                  <CCol md="6">
-                    <CFormInput
-                      v-model="selectedLocation.ahaPassword"
-                      label="Passwort"
-                      type="password"
-                      placeholder="Passwort"
-                      :disabled="!editModeLocation"
-                    />
-                  </CCol>
-                </CRow>
-
-                <!-- Aktions-Buttons -->
-                <div class="d-flex gap-2 align-items-center flex-wrap">
-                  <template v-if="!editModeLocation">
-                    <CButton color="primary" @click="startEditLocation">
-                      Bearbeiten
-                    </CButton>
-                    <CButton
-                      color="danger"
-                      variant="outline"
-                      :disabled="locations.length <= 1"
-                      @click="deleteLocation"
-                    >
-                      Location löschen
-                    </CButton>
-                  </template>
-                  <template v-else>
-                    <CButton color="primary" @click="saveLocation"
-                      >Speichern</CButton
-                    >
-                    <CButton
-                      color="secondary"
-                      variant="outline"
-                      @click="cancelEditLocation"
-                    >
-                      Abbrechen
-                    </CButton>
-                  </template>
+                <div
+                  v-if="loadingLocations"
+                  class="d-flex align-items-center p-3"
+                >
+                  <CSpinner color="primary" size="sm" />
+                  <span class="ms-2 text-medium-emphasis"
+                    >Locations werden geladen…</span
+                  >
                 </div>
+
+                <p
+                  v-else-if="!locations.length && !isNewLocation"
+                  class="text-medium-emphasis mb-0"
+                >
+                  Es sind noch keine Locations angelegt.
+                </p>
+
+                <template v-else>
+                  <!-- Dropdown zur Location-Auswahl -->
+                  <CRow v-if="!isNewLocation" class="mb-4">
+                    <CCol md="4">
+                      <CFormLabel>Location auswählen</CFormLabel>
+                      <CFormSelect
+                        v-model.number="selectedLocationId"
+                        :disabled="editModeLocation"
+                      >
+                        <option
+                          v-for="loc in locations"
+                          :key="loc.id"
+                          :value="loc.id"
+                        >
+                          {{ loc.title || `Location ${loc.id}` }}
+                        </option>
+                      </CFormSelect>
+                    </CCol>
+                  </CRow>
+
+                  <!-- Felder der gewählten Location -->
+                  <CRow class="mb-3">
+                    <CCol md="6">
+                      <CFormInput
+                        v-model="locationForm.title"
+                        label="Name"
+                        placeholder="z. B. Hauptgebäude"
+                        :disabled="!editModeLocation"
+                      />
+                    </CCol>
+                    <CCol md="6">
+                      <CFormInput
+                        v-model="locationForm.ahaurl"
+                        label="AHA URL"
+                        type="url"
+                        placeholder="https://"
+                        :disabled="!editModeLocation"
+                      />
+                    </CCol>
+                  </CRow>
+
+                  <CRow class="mb-3">
+                    <CCol md="6">
+                      <CFormInput
+                        v-model="locationForm.ahauser"
+                        label="Benutzername"
+                        placeholder="admin"
+                        :disabled="!editModeLocation"
+                      />
+                    </CCol>
+                    <CCol md="6">
+                      <CFormInput
+                        v-model="locationForm.ahapassword"
+                        label="Passwort"
+                        type="password"
+                        autocomplete="new-password"
+                        :placeholder="
+                          isNewLocation
+                            ? 'Passwort'
+                            : 'Leer lassen, um das gespeicherte Passwort zu behalten'
+                        "
+                        :disabled="!editModeLocation"
+                      />
+                    </CCol>
+                  </CRow>
+
+                  <!-- Aktions-Buttons -->
+                  <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <template v-if="!editModeLocation">
+                      <CButton
+                        color="primary"
+                        :disabled="!selectedLocation"
+                        @click="startEditLocation"
+                      >
+                        Bearbeiten
+                      </CButton>
+                      <!-- „Location löschen“ vorerst ausgeblendet, siehe TODO im Script -->
+                    </template>
+                    <template v-else>
+                      <CButton
+                        color="primary"
+                        :disabled="savingLocation"
+                        @click="saveLocation"
+                      >
+                        <CSpinner
+                          v-if="savingLocation"
+                          size="sm"
+                          class="me-1"
+                        />
+                        Speichern
+                      </CButton>
+                      <CButton
+                        color="secondary"
+                        variant="outline"
+                        :disabled="savingLocation"
+                        @click="cancelEditLocation"
+                      >
+                        Abbrechen
+                      </CButton>
+                    </template>
+                  </div>
+                </template>
               </CCardBody>
             </CCard>
           </CTabPanel>
