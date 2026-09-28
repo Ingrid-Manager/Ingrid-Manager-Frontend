@@ -149,6 +149,10 @@ watch(
 );
 
 // Startzeit → Endzeit +1 Stunde vorausfüllen
+// `flush: 'sync'`, damit der Watcher sofort beim Setzen der Startzeit läuft.
+// Beim Laden eines bestehenden Termins setzt der Event-Watcher danach die
+// echte Endzeit – mit dem Standard-Flush ('pre') würde dieser Watcher erst
+// anschließend laufen und die geladene Endzeit mit Start + 1h überschreiben.
 watch(
   () => form.value.startTime,
   (newTime) => {
@@ -157,6 +161,7 @@ watch(
     const endHour = (hours + 1) % 24;
     form.value.endTime = `${String(endHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   },
+  { flush: 'sync' },
 );
 
 const dateError = computed(() => {
