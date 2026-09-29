@@ -39,6 +39,15 @@ const routes: RouteRecordRaw[] = [
   },
 
   // ─────────────────────────────────────────────────────────────
+  // CONFIRM EMAIL (Link aus der Registrierungs-Mail, außerhalb von /auth)
+  // ─────────────────────────────────────────────────────────────
+  {
+    path: '/confirm-email',
+    name: 'ConfirmEmail',
+    component: () => import('@/views/auth/ConfirmEmail.vue'),
+  },
+
+  // ─────────────────────────────────────────────────────────────
   // DASHBOARD
   // ─────────────────────────────────────────────────────────────
   {
@@ -97,6 +106,25 @@ const routes: RouteRecordRaw[] = [
   },
 
   // ─────────────────────────────────────────────────────────────
+  // ADMIN-ONLY (bewusst NICHT unter /admin verschachtelt: der Guard unten
+  // sammelt roles über ALLE to.matched-Records auf, verschachtelt unter
+  // /admin würde also automatisch auch 'verwaltung' mit durchlassen)
+  // ─────────────────────────────────────────────────────────────
+  {
+    path: '/admin-only',
+    component: DefaultLayout,
+    redirect: '/admin-only/functions',
+    meta: { roles: ['admin'] },
+    children: [
+      {
+        path: 'functions',
+        name: 'Admin Funktionen',
+        component: () => import('@/views/admin/AdminFunctions.vue'),
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────────────────────
   // RESSOURCEN
   // ─────────────────────────────────────────────────────────────
   {
@@ -150,9 +178,10 @@ router.beforeEach(async (to, from, next) => {
 
   const isLoggedIn = auth.isAuthenticated;
   const isAuthRoute = to.path.startsWith('/auth');
+  const isPublicRoute = isAuthRoute || to.path === '/confirm-email';
 
   // Nicht eingeloggt
-  if (!isLoggedIn && !isAuthRoute) {
+  if (!isLoggedIn && !isPublicRoute) {
     return next('/auth/login');
   }
 

@@ -2,6 +2,8 @@
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { register } from '@/api/register.api';
+import ImpressumModal from '@/components/modals/ImpressumModal.vue';
+import DatenschutzModal from '@/components/modals/DatenschutzModal.vue';
 
 const router = useRouter();
 
@@ -9,6 +11,8 @@ const loading = ref(false);
 const error = ref('');
 const success = ref(false);
 const loadedAt = Date.now();
+const showImpressum = ref(false);
+const showDatenschutz = ref(false);
 
 const form = ref({
   'register-firstname': '',
@@ -38,7 +42,7 @@ const submit = async () => {
   const seconds = (Date.now() - loadedAt) / 1000;
 
   if (seconds < 3) {
-    error.value = 'Bitte waren Sie einen Moment';
+    error.value = 'Bitte warte einen Moment';
     return;
   }
 
@@ -49,7 +53,7 @@ const submit = async () => {
     !form.value['register-password'] ||
     !form.value['register-password-confirm']
   ) {
-    error.value = 'Bitte füllen Sie alle Felder aus.';
+    error.value = 'Bitte fülle alle Felder aus.';
     return;
   }
 
@@ -99,7 +103,7 @@ const submit = async () => {
                   <div v-if="success">
                     <h1>Registrierung erfolgreich</h1>
                     <p class="text-body-secondary">
-                      Ihr Konto wurde erstellt. Bitte bestätige deine Mailadresse.
+                      Dein Konto wurde erstellt. Bitte bestätige deine Mailadresse.
                       Danach kann die Verwaltung dich freischalten.
                     </p>
                     <CButton
@@ -114,7 +118,7 @@ const submit = async () => {
                   <!-- Registrierungsformular -->
                   <CForm v-else @submit.prevent="submit">
                     <h1>Registrieren</h1>
-                    <p class="text-body-secondary">Erstellen Sie Ihr Konto.</p>
+                    <p class="text-body-secondary">Erstelle dein Konto.</p>
 
                     <CAlert
                       v-if="error"
@@ -237,8 +241,8 @@ const submit = async () => {
                 >
                   <h2>Willkommen</h2>
                   <p>
-                    Nach der Registrierung muss Ihr Konto von der Verwaltung
-                    freigeschaltet werden. Erst danach können Sie sich anmelden.
+                    Nach der Registrierung muss dein Konto von der Verwaltung
+                    freigeschaltet werden. Erst danach kannst du dich anmelden.
                   </p>
                   <CButton
                     color="light"
@@ -254,6 +258,33 @@ const submit = async () => {
           </CRow>
         </CCol>
       </CRow>
+      <CRow class="justify-content-center mt-3">
+        <CCol :md="8" class="text-center">
+          <CButton
+            color="link"
+            class="text-body-secondary"
+            @click="showImpressum = true"
+          >
+            Impressum
+          </CButton>
+          <CButton
+            color="link"
+            class="text-body-secondary"
+            @click="showDatenschutz = true"
+          >
+            Datenschutz
+          </CButton>
+        </CCol>
+      </CRow>
     </CContainer>
+
+    <ImpressumModal
+      :visible="showImpressum"
+      @close="showImpressum = false"
+    />
+    <DatenschutzModal
+      :visible="showDatenschutz"
+      @close="showDatenschutz = false"
+    />
   </div>
 </template>

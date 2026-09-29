@@ -2,12 +2,16 @@
 import { ref, watch } from 'vue';
 import { useAuthStore } from '../../stores/auth.store';
 import { useRouter } from 'vue-router';
+import ImpressumModal from '@/components/modals/ImpressumModal.vue';
+import DatenschutzModal from '@/components/modals/DatenschutzModal.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
 
 const loading = ref(false);
 const error = ref('');
+const showImpressum = ref(false);
+const showDatenschutz = ref(false);
 
 const form = ref({
   email: '',
@@ -29,7 +33,7 @@ const submit = async () => {
 
   // client-side input validation
   if (!form.value.email || !form.value.password) {
-    error.value = 'Bitte geben Sie E-Mail und Passwort ein.';
+    error.value = 'Bitte gib E-Mail und Passwort ein.';
     loading.value = false;
     return;
   }
@@ -60,7 +64,7 @@ const submit = async () => {
                   <CForm @submit.prevent="submit">
                     <h1>Anmeldung</h1>
                     <p class="text-body-secondary">
-                      Melden Sie sich mit Ihren Zugangsdaten an.
+                      Melde dich mit deinen Zugangsdaten an.
                     </p>
                     <CAlert
                       v-if="error"
@@ -126,7 +130,7 @@ const submit = async () => {
                   <div>
                     <h2>Registrieren</h2>
                     <p>
-                      Sie können sich hier registrieren, müssen aber vor der
+                      Du kannst dich hier registrieren, musst aber vor der
                       Verwendung des Ingrid Managers von der Verwaltung
                       freigeschaltet werden!
                     </p>
@@ -145,6 +149,33 @@ const submit = async () => {
           </CRow>
         </CCol>
       </CRow>
+      <CRow class="justify-content-center mt-3">
+        <CCol :md="8" class="text-center">
+          <CButton
+            color="link"
+            class="text-body-secondary"
+            @click="showImpressum = true"
+          >
+            Impressum
+          </CButton>
+          <CButton
+            color="link"
+            class="text-body-secondary"
+            @click="showDatenschutz = true"
+          >
+            Datenschutz
+          </CButton>
+        </CCol>
+      </CRow>
     </CContainer>
+
+    <ImpressumModal
+      :visible="showImpressum"
+      @close="showImpressum = false"
+    />
+    <DatenschutzModal
+      :visible="showDatenschutz"
+      @close="showDatenschutz = false"
+    />
   </div>
 </template>

@@ -21,6 +21,7 @@ import PrintModal from '@/components/modals/PrintModal.vue';
 import { fetchEvents } from '@/api/getCalendar';
 import { PrefillData } from '@/helper/interfaces/PrefillData';
 import { useAuthStore } from '@/stores/auth.store';
+import { usePrintTriggerStore } from '@/stores/printTrigger.store';
 import { CalendarEvent } from '@/helper/interfaces/calendar/CalendarEvent';
 import { createEvent } from '@/api/createEvent';
 import { getRoomNames } from '@/api/getRoomNames';
@@ -133,6 +134,15 @@ function openPrintModal() {
 function closePrintModal() {
   showPrintModal.value = false;
 }
+
+// Auf Mobile befindet sich der Auslöser nicht mehr im Kalender selbst,
+// sondern im Zahnrad-Menü des AppHeader (siehe printTrigger.store.ts).
+// `immediate: false`, da requestId beim Mount noch 0 ist und kein Klick
+// vorliegt - erst ein tatsächlicher Klick soll das Modal öffnen.
+const printTrigger = usePrintTriggerStore();
+watch(() => printTrigger.requestId, () => {
+  openPrintModal();
+});
 
 function openModal(prefill: PrefillData = {}) {
   formData.value = prefill;
@@ -427,13 +437,13 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 
   // Header-Toolbar mit Ansichts-Umschalter
 
+  // Auf Mobile ist "Drucken" nicht mehr im Kalender-Toolbar, sondern im
+  // Zahnrad-Menü des AppHeader (siehe printTrigger.store.ts).
   headerToolbar: isMobile.value
     ? {
         left: 'prev,next',
         center: 'title',
-        right: isGuest.value
-          ? 'kalenderDrucken'
-          : 'ressourceBuchen,kalenderDrucken',
+        right: isGuest.value ? '' : 'ressourceBuchen',
       }
     : {
         //left: 'toggleSidebar prev,next today ressourceBuchen',

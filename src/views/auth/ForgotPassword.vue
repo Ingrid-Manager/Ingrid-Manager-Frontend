@@ -34,7 +34,7 @@ const submit = async () => {
     const axiosError = err as AxiosError<{ message?: string }>;
     error.value =
       axiosError.response?.data?.message ||
-      'Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es später erneut.';
+      'Die Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.';
   } finally {
     loading.value = false;
   }
@@ -54,10 +54,10 @@ const submit = async () => {
                   <div v-if="success">
                     <h1>E-Mail verschickt</h1>
                     <p class="text-body-secondary">
-                      Wir haben Ihnen eine E-Mail mit einem Link zum
-                      Zurücksetzen Ihres Passworts an
+                      Wir haben dir eine E-Mail mit einem Link zum
+                      Zurücksetzen deines Passworts an
                       <strong>{{ form['forgot-password-email'] }}</strong>
-                      gesendet. Bitte prüfen Sie auch Ihren Spam-Ordner.
+                      gesendet. Bitte prüfe auch deinen Spam-Ordner.
                     </p>
                     <CButton
                       color="primary"
@@ -72,9 +72,9 @@ const submit = async () => {
                   <CForm v-else @submit.prevent="submit">
                     <h1>Passwort vergessen?</h1>
                     <p class="text-body-secondary">
-                      Geben Sie Ihren Vornamen und Ihre E-Mail-Adresse an. Sie
-                      erhalten anschließend eine E-Mail mit einem Link zum
-                      Zurücksetzen Ihres Passworts.
+                      Gib deinen Vornamen und deine E-Mail-Adresse an. Du
+                      erhältst anschließend eine E-Mail mit einem Link zum
+                      Zurücksetzen deines Passworts.
                     </p>
 
                     <CAlert
@@ -148,9 +148,9 @@ const submit = async () => {
                 >
                   <h2>Passwort vergessen?</h2>
                   <p>
-                    Kein Problem. Geben Sie Ihren Vornamen und Ihre
-                    E-Mail-Adresse an und wir senden Ihnen einen Link zum
-                    Zurücksetzen Ihres Passworts zu.
+                    Kein Problem. Gib deinen Vornamen und deine
+                    E-Mail-Adresse an und wir senden dir einen Link zum
+                    Zurücksetzen deines Passworts zu.
                   </p>
                   <CButton
                     color="light"

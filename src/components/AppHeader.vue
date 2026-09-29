@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, nextTick } from 'vue';
 import { useColorModes } from '@coreui/vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useVersionStore } from '@/stores/version.store';
+import { usePrintTriggerStore } from '@/stores/printTrigger.store';
 import type { Ref } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
 const auth = useAuthStore();
 const versionStore = useVersionStore();
+const printTrigger = usePrintTriggerStore();
 const frontendVersion = __APP_VERSION__;
 const headerClassNames = ref<string>('mb-2 p-0');
 //TODO: Vorher: 'mb-4 p-0' Dadurch der Abstand zwischen Navbar und App-content größer
@@ -18,6 +20,7 @@ const canAccessAdmin = computed(
   () =>
     auth.user?.role?.name === 'admin' || auth.user?.role?.name === 'verwaltung',
 );
+const isAdmin = computed(() => auth.user?.role?.name === 'admin');
 const showTerminImport = computed(
   () => import.meta.env.VITE_TERMIN_IMPORT === 'true',
 );
@@ -46,6 +49,19 @@ const mobileNavLabel = computed(() =>
 const mobileNavHref = computed(() =>
   isOnDashboard.value ? '/ressourcen' : '/dashboard',
 );
+
+// Öffnet auf Mobile das Druck-Modal aus dem Zahnrad-Menü heraus. AppHeader
+// und CalendarView stehen sich nicht als Eltern/Kind gegenüber, daher der
+// Umweg über den printTrigger-Store (siehe dort). Ist der Kalender noch
+// nicht gemountet (z. B. Aufruf von der Ressourcen-Seite aus), wird zuerst
+// dorthin navigiert, damit CalendarView den Store-Watcher registrieren kann.
+async function handlePrintClick() {
+  if (!isOnDashboard.value) {
+    await router.push('/dashboard');
+    await nextTick();
+  }
+  printTrigger.requestPrint();
+}
 
 onMounted(() => {
   document.addEventListener('scroll', () => {
@@ -87,6 +103,11 @@ onMounted(() => {
               >Termin Import</CDropdownItem
             >
             <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
+            <CDropdownItem
+              v-if="isAdmin"
+              href="/admin-only/functions"
+              >Admin Funktionen</CDropdownItem
+            >
           </CDropdownMenu>
         </CDropdown>
       </CHeaderNav>
@@ -102,9 +123,10 @@ onMounted(() => {
 
       <!-- ── Rechte Seite: Theme + User (immer sichtbar) ───────────────── -->
       <CHeaderNav class="ms-auto">
-        <!-- Zahnrad nur auf Mobile -->
+        <!-- Zahnrad nur auf Mobile - für alle Rollen sichtbar (Drucken ist
+             auch für Gäste verfügbar), die Verwaltungs-Einträge darunter
+             bleiben einzeln auf canAccessAdmin/isAdmin gegated. -->
         <CDropdown
-          v-if="canAccessAdmin"
           variant="nav-item"
           :popper="false"
           alignment="end"
@@ -114,20 +136,31 @@ onMounted(() => {
             <CIcon icon="cil-settings" size="lg" />
           </CDropdownToggle>
           <CDropdownMenu>
-            <CDropdownItem href="/admin/users"
-              >Benutzerverwaltung</CDropdownItem
+            <CDropdownItem component="button" type="button" @click="handlePrintClick"
+              >Drucken</CDropdownItem
             >
-            <CDropdownItem href="/admin/rooms">Raumverwaltung</CDropdownItem>
-            <CDropdownItem href="/ressourcen/verwaltung"
-              >Ressourcenverwaltung</CDropdownItem
-            >
-            <CDropdownItem href="/admin/settings"
-              >Anwendungseinstellungen</CDropdownItem
-            >
-            <CDropdownItem v-if="showTerminImport" href="/admin/import"
-              >Termin Import</CDropdownItem
-            >
-            <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
+            <template v-if="canAccessAdmin">
+              <CDropdownDivider />
+              <CDropdownItem href="/admin/users"
+                >Benutzerverwaltung</CDropdownItem
+              >
+              <CDropdownItem href="/admin/rooms">Raumverwaltung</CDropdownItem>
+              <CDropdownItem href="/ressourcen/verwaltung"
+                >Ressourcenverwaltung</CDropdownItem
+              >
+              <CDropdownItem href="/admin/settings"
+                >Anwendungseinstellungen</CDropdownItem
+              >
+              <CDropdownItem v-if="showTerminImport" href="/admin/import"
+                >Termin Import</CDropdownItem
+              >
+              <CDropdownItem href="/admin/logs">Aktivitäten</CDropdownItem>
+              <CDropdownItem
+                v-if="isAdmin"
+                href="/admin-only/functions"
+                >Admin Funktionen</CDropdownItem
+              >
+            </template>
           </CDropdownMenu>
         </CDropdown>
       </CHeaderNav>
@@ -189,7 +222,10 @@ onMounted(() => {
               component="h6"
               class="bg-body-secondary text-body-secondary fw-semibold mb-2 rounded-top"
             >
-              Profil
+              Profil:
+              <template v-if="auth.user?.firstName"
+                ><br />{{ auth.user.firstName }}</template
+              >
             </CDropdownHeader>
             <!--
             <CDropdownItem>

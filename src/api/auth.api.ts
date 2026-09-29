@@ -17,3 +17,7 @@ export async function getMeApi() {
 export async function logoutApi() {
   await http.post('/auth/logout');
 }
+
+export async function confirmEmailApi(hash: string) {
+  await http.post('/auth/email/confirm', { hash });
+}

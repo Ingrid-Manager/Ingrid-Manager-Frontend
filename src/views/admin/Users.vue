@@ -55,6 +55,9 @@ function statusColor(status: { id: number; name: string }) {
     case 'inactive':
       return 'secondary';
 
+    case 'blocked':
+      return 'danger';
+
     default:
       return 'secondary';
   }

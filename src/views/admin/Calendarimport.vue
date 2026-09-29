@@ -22,6 +22,8 @@ interface RawExcelRow {
   Titel?: string;
   Datum?: string | number | Date;
   Uhrzeit?: string | number | Date;
+  // Optional: Enduhrzeit am selben Tag. Leer -> Dauer DEFAULT_DURATION_MS.
+  'Uhrzeit (Ende)'?: string | number | Date;
   Veranstaltungsort?: string;
   Beschreibung?: string;
   [key: string]: unknown;
@@ -90,6 +92,8 @@ const ROOM_ALIASES: { keywords: string[]; roomTitle: string }[] = [
 ];
 
 const REQUIRED_COLUMNS: (keyof RawExcelRow)[] = ['Titel', 'Datum', 'Uhrzeit'];
+const END_TIME_COLUMN = 'Uhrzeit (Ende)';
+const DEFAULT_DURATION_MS = 60 * 60 * 1000; // ohne Enduhrzeit: 1 Stunde
 const MAX_ROWS = 2000; // Sicherheits-Obergrenze, um den Tab nicht einzufrieren
 
 // ─── State: Räume ───────────────────────────────────────────────────────────
@@ -435,7 +439,38 @@ function validateRows(
       });
       continue;
     }
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+    // Enduhrzeit ist optional und bezieht sich auf das Datum des Beginns.
+    const endTimeVal = row[END_TIME_COLUMN];
+    let end: Date;
+    if (endTimeVal === null || endTimeVal === undefined || endTimeVal === '') {
+      end = new Date(start.getTime() + DEFAULT_DURATION_MS);
+    } else {
+      const parsedEnd = combineDateAndTime(row['Datum'], endTimeVal);
+      if (!parsedEnd) {
+        errors.push({
+          row: rowNum,
+          reason: END_TIME_COLUMN + ' konnte nicht gelesen werden.',
+          data: row,
+        });
+        continue;
+      }
+      if (parsedEnd.getTime() <= start.getTime()) {
+        errors.push({
+          row: rowNum,
+          reason:
+            END_TIME_COLUMN +
+            ' (' +
+            fmt(parsedEnd) +
+            ') liegt nicht nach dem Beginn (' +
+            fmt(start) +
+            '). Termine über Mitternacht werden nicht unterstützt.',
+          data: row,
+        });
+        continue;
+      }
+      end = parsedEnd;
+    }
 
     const roomResult = resolveRoom(row['Veranstaltungsort']);
     if (roomResult.ambiguous) {
@@ -792,7 +827,9 @@ async function runImport(pending: PendingImport) {
       <p class="text-medium-emphasis mb-4">
         Lädt Termine aus einer .xlsx-Datei (Spalten:
         <em>Titel, Datum, Uhrzeit, Veranstaltungsort, Beschreibung</em>) direkt
-        in den Kalender.<br />
+        in den Kalender. Die optionale Spalte <em>Uhrzeit (Ende)</em> legt das
+        Terminende am selben Tag fest; ist sie leer, dauert der Termin 1
+        Stunde.<br />
         Dies ist komplett abgestimmt auf die Datei für den Termin-Import bei
         <a
           href="https://www.termine-e.de"
