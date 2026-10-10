@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { register } from '@/api/register.api';
 import ImpressumModal from '@/components/modals/ImpressumModal.vue';
@@ -14,21 +14,28 @@ const loadedAt = Date.now();
 const showImpressum = ref(false);
 const showDatenschutz = ref(false);
 
-// Muss mit der Passwort-Regel im Backend (AuthRegisterLoginDto) übereinstimmen.
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W]).+$/;
-const PASSWORD_HINT =
-  'Mindestens 8 Zeichen, Groß- und Kleinbuchstaben sowie mindestens eine Zahl oder ein Sonderzeichen.';
+type FieldId =
+  | 'register-firstname'
+  | 'register-lastname'
+  | 'register-email'
+  | 'register-password'
+  | 'register-password-confirm';
 
-function passwordPolicyError(password: string): string {
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    return `Das Passwort muss mindestens ${PASSWORD_MIN_LENGTH} Zeichen lang sein.`;
-  }
-  if (!PASSWORD_PATTERN.test(password)) {
-    return 'Das Passwort muss Groß- und Kleinbuchstaben sowie mindestens eine Zahl oder ein Sonderzeichen enthalten.';
-  }
-  return '';
-}
+// Nur die Felder, die tatsächlich fehlerhaft sind, werden rot markiert.
+const invalidFields = ref<FieldId[]>([]);
+const isInvalid = (field: FieldId) => invalidFields.value.includes(field);
+
+// Muss mit der Passwort-Regel im Backend (AuthRegisterLoginDto) übereinstimmen:
+// @MinLength(8) und /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W]).+$/
+const PASSWORD_RULES = [
+  { label: 'mindestens 8 Zeichen', test: (pw: string) => pw.length >= 8 },
+  { label: 'ein Kleinbuchstabe', test: (pw: string) => /[a-z]/.test(pw) },
+  { label: 'ein Großbuchstabe', test: (pw: string) => /[A-Z]/.test(pw) },
+  {
+    label: 'eine Zahl oder ein Sonderzeichen',
+    test: (pw: string) => /[\d\W]/.test(pw),
+  },
+];
 
 // Übersetzt die Fehlerantwort des Backends in eine verständliche Meldung.
 // Validierungsfehler kommen als { message: string[] }, fachliche Fehler als
@@ -45,6 +52,7 @@ function describeRegisterError(err: unknown): string {
   const message = response?.data?.message;
 
   if (response?.data?.errors?.email === 'emailAlreadyExists') {
+    invalidFields.value = ['register-email'];
     return 'Für diese E-Mail-Adresse existiert bereits ein Konto.';
   }
 
@@ -57,7 +65,7 @@ function describeRegisterError(err: unknown): string {
   }
 
   if (response?.status === 400 || response?.status === 422) {
-    return `Die Registrierung wurde abgelehnt. Bitte prüfe deine Eingaben. Passwort: ${PASSWORD_HINT}`;
+    return 'Die Registrierung wurde abgelehnt. Bitte prüfe deine Eingaben.';
   }
 
   return 'Registrierung fehlgeschlagen.';
@@ -73,10 +81,18 @@ const form = ref({
   website: '',
 });
 
+const passwordRules = computed(() =>
+  PASSWORD_RULES.map((rule) => ({
+    label: rule.label,
+    met: rule.test(form.value['register-password']),
+  })),
+);
+
 watch(
   form,
   () => {
     error.value = '';
+    invalidFields.value = [];
   },
   { deep: true },
 );
@@ -87,6 +103,7 @@ const submit = async () => {
   }
 
   error.value = '';
+  invalidFields.value = [];
 
   const seconds = (Date.now() - loadedAt) / 1000;
 
@@ -95,27 +112,34 @@ const submit = async () => {
     return;
   }
 
-  if (
-    !form.value['register-firstname'] ||
-    !form.value['register-lastname'] ||
-    !form.value['register-email'] ||
-    !form.value['register-password'] ||
-    !form.value['register-password-confirm']
-  ) {
+  const requiredFields: FieldId[] = [
+    'register-firstname',
+    'register-lastname',
+    'register-email',
+    'register-password',
+    'register-password-confirm',
+  ];
+  const emptyFields = requiredFields.filter((field) => !form.value[field]);
+  if (emptyFields.length > 0) {
+    invalidFields.value = emptyFields;
     error.value = 'Bitte fülle alle Felder aus.';
+    return;
+  }
+
+  const missingRules = passwordRules.value
+    .filter((rule) => !rule.met)
+    .map((rule) => rule.label);
+  if (missingRules.length > 0) {
+    invalidFields.value = ['register-password'];
+    error.value = `Das Passwort erfüllt nicht alle Vorgaben. Es fehlt: ${missingRules.join(', ')}.`;
     return;
   }
 
   if (
     form.value['register-password'] !== form.value['register-password-confirm']
   ) {
+    invalidFields.value = ['register-password-confirm'];
     error.value = 'Die Passwörter stimmen nicht überein.';
-    return;
-  }
-
-  const passwordError = passwordPolicyError(form.value['register-password']);
-  if (passwordError) {
-    error.value = passwordError;
     return;
   }
 
@@ -194,7 +218,7 @@ const submit = async () => {
                             v-model="form['register-firstname']"
                             placeholder="Vorname"
                             autocomplete="given-name"
-                            :invalid="!!error"
+                            :invalid="isInvalid('register-firstname')"
                           />
                         </CInputGroup>
                       </CCol>
@@ -208,7 +232,7 @@ const submit = async () => {
                             v-model="form['register-lastname']"
                             placeholder="Nachname"
                             autocomplete="family-name"
-                            :invalid="!!error"
+                            :invalid="isInvalid('register-lastname')"
                           />
                         </CInputGroup>
                       </CCol>
@@ -223,7 +247,7 @@ const submit = async () => {
                         type="email"
                         placeholder="E-Mail Adresse"
                         autocomplete="email"
-                        :invalid="!!error"
+                        :invalid="isInvalid('register-email')"
                       />
                     </CInputGroup>
 
@@ -238,10 +262,25 @@ const submit = async () => {
                         type="password"
                         placeholder="Passwort"
                         autocomplete="new-password"
-                        :invalid="!!error"
+                        :invalid="isInvalid('register-password')"
                       />
                     </CInputGroup>
-                    <div class="form-text mb-3">{{ PASSWORD_HINT }}</div>
+                    <ul class="list-unstyled small mt-1 mb-3">
+                      <li
+                        v-for="rule in passwordRules"
+                        :key="rule.label"
+                        :class="
+                          rule.met ? 'text-success' : 'text-body-secondary'
+                        "
+                      >
+                        <CIcon
+                          :icon="rule.met ? 'cil-check' : 'cil-x-circle'"
+                          size="sm"
+                          class="me-1"
+                        />
+                        {{ rule.label }}
+                      </li>
+                    </ul>
 
                     <!-- Passwort bestätigen -->
                     <CInputGroup class="mb-4">
@@ -254,7 +293,7 @@ const submit = async () => {
                         type="password"
                         placeholder="Passwort bestätigen"
                         autocomplete="new-password"
-                        :invalid="!!error"
+                        :invalid="isInvalid('register-password-confirm')"
                       />
                     </CInputGroup>
 
