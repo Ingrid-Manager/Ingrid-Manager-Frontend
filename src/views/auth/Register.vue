@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { register } from '@/api/register.api';
 import ImpressumModal from '@/components/modals/ImpressumModal.vue';
@@ -25,17 +25,14 @@ type FieldId =
 const invalidFields = ref<FieldId[]>([]);
 const isInvalid = (field: FieldId) => invalidFields.value.includes(field);
 
-// Muss mit der Passwort-Regel im Backend (AuthRegisterLoginDto) übereinstimmen:
-// @MinLength(8) und /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W]).+$/
-const PASSWORD_RULES = [
-  { label: 'mindestens 8 Zeichen', test: (pw: string) => pw.length >= 8 },
-  { label: 'ein Kleinbuchstabe', test: (pw: string) => /[a-z]/.test(pw) },
-  { label: 'ein Großbuchstabe', test: (pw: string) => /[A-Z]/.test(pw) },
-  {
-    label: 'eine Zahl oder ein Sonderzeichen',
-    test: (pw: string) => /[\d\W]/.test(pw),
-  },
-];
+// Muss mit der Passwort-Regel im Backend (AuthRegisterLoginDto) übereinstimmen.
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W]).+$/;
+const PASSWORD_REQUIREMENTS =
+  'Das Passwort muss mindestens 8 Zeichen lang sein und Groß- und Kleinbuchstaben sowie mindestens eine Zahl oder ein Sonderzeichen enthalten.';
+
+const isPasswordValid = (password: string) =>
+  password.length >= PASSWORD_MIN_LENGTH && PASSWORD_PATTERN.test(password);
 
 // Übersetzt die Fehlerantwort des Backends in eine verständliche Meldung.
 // Validierungsfehler kommen als { message: string[] }, fachliche Fehler als
@@ -81,13 +78,6 @@ const form = ref({
   website: '',
 });
 
-const passwordRules = computed(() =>
-  PASSWORD_RULES.map((rule) => ({
-    label: rule.label,
-    met: rule.test(form.value['register-password']),
-  })),
-);
-
 watch(
   form,
   () => {
@@ -126,12 +116,9 @@ const submit = async () => {
     return;
   }
 
-  const missingRules = passwordRules.value
-    .filter((rule) => !rule.met)
-    .map((rule) => rule.label);
-  if (missingRules.length > 0) {
+  if (!isPasswordValid(form.value['register-password'])) {
     invalidFields.value = ['register-password'];
-    error.value = `Das Passwort erfüllt nicht alle Vorgaben. Es fehlt: ${missingRules.join(', ')}.`;
+    error.value = PASSWORD_REQUIREMENTS;
     return;
   }
 
@@ -252,7 +239,7 @@ const submit = async () => {
                     </CInputGroup>
 
                     <!-- Passwort -->
-                    <CInputGroup>
+                    <CInputGroup class="mb-3">
                       <CInputGroupText>
                         <CIcon icon="cil-lock-locked" />
                       </CInputGroupText>
@@ -265,22 +252,6 @@ const submit = async () => {
                         :invalid="isInvalid('register-password')"
                       />
                     </CInputGroup>
-                    <ul class="list-unstyled small mt-1 mb-3">
-                      <li
-                        v-for="rule in passwordRules"
-                        :key="rule.label"
-                        :class="
-                          rule.met ? 'text-success' : 'text-body-secondary'
-                        "
-                      >
-                        <CIcon
-                          :icon="rule.met ? 'cil-check' : 'cil-x-circle'"
-                          size="sm"
-                          class="me-1"
-                        />
-                        {{ rule.label }}
-                      </li>
-                    </ul>
 
                     <!-- Passwort bestätigen -->
                     <CInputGroup class="mb-4">
