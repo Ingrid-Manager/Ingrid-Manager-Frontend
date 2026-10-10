@@ -14,6 +14,55 @@ const loadedAt = Date.now();
 const showImpressum = ref(false);
 const showDatenschutz = ref(false);
 
+// Muss mit der Passwort-Regel im Backend (AuthRegisterLoginDto) übereinstimmen.
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W]).+$/;
+const PASSWORD_HINT =
+  'Mindestens 8 Zeichen, Groß- und Kleinbuchstaben sowie mindestens eine Zahl oder ein Sonderzeichen.';
+
+function passwordPolicyError(password: string): string {
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return `Das Passwort muss mindestens ${PASSWORD_MIN_LENGTH} Zeichen lang sein.`;
+  }
+  if (!PASSWORD_PATTERN.test(password)) {
+    return 'Das Passwort muss Groß- und Kleinbuchstaben sowie mindestens eine Zahl oder ein Sonderzeichen enthalten.';
+  }
+  return '';
+}
+
+// Übersetzt die Fehlerantwort des Backends in eine verständliche Meldung.
+// Validierungsfehler kommen als { message: string[] }, fachliche Fehler als
+// { errors: { feld: 'code' } }; ein reines "Bad Request" ist nicht hilfreich.
+function describeRegisterError(err: unknown): string {
+  const response = (
+    err as {
+      response?: {
+        status?: number;
+        data?: { message?: unknown; errors?: Record<string, unknown> };
+      };
+    }
+  )?.response;
+  const message = response?.data?.message;
+
+  if (response?.data?.errors?.email === 'emailAlreadyExists') {
+    return 'Für diese E-Mail-Adresse existiert bereits ein Konto.';
+  }
+
+  if (Array.isArray(message) && message.length > 0) {
+    return message.join(' ');
+  }
+
+  if (typeof message === 'string' && message && message !== 'Bad Request') {
+    return message;
+  }
+
+  if (response?.status === 400 || response?.status === 422) {
+    return `Die Registrierung wurde abgelehnt. Bitte prüfe deine Eingaben. Passwort: ${PASSWORD_HINT}`;
+  }
+
+  return 'Registrierung fehlgeschlagen.';
+}
+
 const form = ref({
   'register-firstname': '',
   'register-lastname': '',
@@ -64,8 +113,9 @@ const submit = async () => {
     return;
   }
 
-  if (form.value['register-password'].length < 8) {
-    error.value = 'Das Passwort muss mindestens 8 Zeichen lang sein.';
+  const passwordError = passwordPolicyError(form.value['register-password']);
+  if (passwordError) {
+    error.value = passwordError;
     return;
   }
 
@@ -80,10 +130,9 @@ const submit = async () => {
     });
 
     success.value = true;
-  } catch (err: any) {
+  } catch (err) {
     console.error(err);
-    error.value =
-      err?.response?.data?.message || 'Registrierung fehlgeschlagen.';
+    error.value = describeRegisterError(err);
   } finally {
     loading.value = false;
   }
@@ -179,7 +228,7 @@ const submit = async () => {
                     </CInputGroup>
 
                     <!-- Passwort -->
-                    <CInputGroup class="mb-3">
+                    <CInputGroup>
                       <CInputGroupText>
                         <CIcon icon="cil-lock-locked" />
                       </CInputGroupText>
@@ -192,6 +241,7 @@ const submit = async () => {
                         :invalid="!!error"
                       />
                     </CInputGroup>
+                    <div class="form-text mb-3">{{ PASSWORD_HINT }}</div>
 
                     <!-- Passwort bestätigen -->
                     <CInputGroup class="mb-4">
